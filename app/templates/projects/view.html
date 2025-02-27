@@ -1,0 +1,193 @@
+{% extends 'layout.html' %}
+
+{% block title %}프로젝트 상세 정보{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>프로젝트 상세 정보</h1>
+        <div>
+            <a href="{{ url_for('projects.edit', id=project.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> 수정
+            </a>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="fas fa-trash"></i> 삭제
+            </button>
+            <a href="{{ url_for('projects.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 목록
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="card-title mb-0">
+                {{ project.project_name }}
+                {% if project.status == 'planning' %}
+                <span class="badge bg-warning">계획 중</span>
+                {% elif project.status == 'in_progress' %}
+                <span class="badge bg-primary">진행 중</span>
+                {% elif project.status == 'completed' %}
+                <span class="badge bg-success">완료</span>
+                {% elif project.status == 'suspended' %}
+                <span class="badge bg-danger">중단</span>
+                {% else %}
+                <span class="badge bg-secondary">{{ project.status }}</span>
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>기본 정보</h5>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>프로젝트 코드</th>
+                            <td>{{ project.project_code }}</td>
+                        </tr>
+                        <tr>
+                            <th>프로젝트 연도</th>
+                            <td>{{ project.project_year }}</td>
+                        </tr>
+                        <tr>
+                            <th>시작일</th>
+                            <td>{{ project.start_date.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        <tr>
+                            <th>종료일</th>
+                            <td>{{ project.end_date.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        <tr>
+                            <th>예산</th>
+                            <td>₩{{ '{:,.2f}'.format(project.budget|float) if project.budget else '0.00' }}</td>
+                        </tr>
+                        <tr>
+                            <th>담당 부서</th>
+                            <td>{{ project.department_in_charge or '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>담당자 정보</h5>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>거래처</th>
+                            <td>
+                                {% if project.client_company %}
+                                {{ project.client_company.company_name }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>거래처 담당자</th>
+                            <td>
+                                {% if project.client_contact %}
+                                {{ project.client_contact.name }} ({{ project.client_contact.phone or '-' }})
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>프로젝트 매니저</th>
+                            <td>
+                                {% if project.project_manager %}
+                                {{ project.project_manager.name }} ({{ project.project_manager.phone or '-' }})
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <h5 class="mt-4">프로젝트 설명</h5>
+            <div class="card">
+                <div class="card-body">
+                    {% if project.description %}
+                    <p class="mb-0">{{ project.description|nl2br }}</p>
+                    {% else %}
+                    <p class="text-muted mb-0">프로젝트 설명이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 추가 섹션: 연결된 장소 -->
+            <h5 class="mt-4">연결된 장소</h5>
+            <div class="card">
+                <div class="card-body">
+                    {% if project.locations %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>장소명</th>
+                                    <th>지역</th>
+                                    <th>주소</th>
+                                    <th>연락처</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for location in project.locations %}
+                                <tr>
+                                    <td>{{ location.location_name }}</td>
+                                    <td>{{ location.region }}</td>
+                                    <td>{{ location.address }}</td>
+                                    <td>{{ location.contact_phone or '-' }}</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-info">보기</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">연결된 장소가 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <small>생성일: {{ project.created_at.strftime('%Y-%m-%d %H:%M') }} | 
+                   최종 수정일: {{ project.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">프로젝트 삭제 확인</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>정말로 프로젝트 <strong>{{ project.project_name }}</strong>을(를) 삭제하시겠습니까?</p>
+                <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form action="{{ url_for('projects.delete', id=project.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends 'layout.html' %}
+
+{% block title %}프로젝트 수정{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">프로젝트 수정</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('projects.edit', id=project.id) }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="project_year" class="form-label">프로젝트 연도</label>
+                                    <input type="number" class="form-control" id="project_year" name="project_year" required min="2000" max="2100" value="{{ project.project_year }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="project_code" class="form-label">프로젝트 코드</label>
+                                    <input type="text" class="form-control" id="project_code" name="project_code" required value="{{ project.project_code }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="project_name" class="form-label">프로젝트 이름</label>
+                            <input type="text" class="form-control" id="project_name" name="project_name" required value="{{ project.project_name }}">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">시작일</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" required value="{{ project.start_date.strftime('%Y-%m-%d') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">종료일</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" required value="{{ project.end_date.strftime('%Y-%m-%d') }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="budget" class="form-label">예산</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₩</span>
+                                <input type="number" class="form-control" id="budget" name="budget" step="0.01" value="{{ project.budget or '' }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="client_company_id" class="form-label">거래처</label>
+                                    <select class="form-select" id="client_company_id" name="client_company_id">
+                                        <option value="">선택하세요</option>
+                                        {% for company in companies %}
+                                        <option value="{{ company.id }}" {% if project.client_company_id == company.id %}selected{% endif %}>
+                                            {{ company.company_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="client_contact_id" class="form-label">거래처 담당자</label>
+                                    <select class="form-select" id="client_contact_id" name="client_contact_id">
+                                        <option value="">선택하세요</option>
+                                        {% for user in users %}
+                                        {% if user.user_type == 'client' %}
+                                        <option value="{{ user.id }}" data-company="{{ user.company }}" {% if project.client_contact_id == user.id %}selected{% endif %}>
+                                            {{ user.name }} ({{ user.company }})
+                                        </option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="department_in_charge" class="form-label">담당 부서</label>
+                                    <input type="text" class="form-control" id="department_in_charge" name="department_in_charge" value="{{ project.department_in_charge or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pm_id" class="form-label">프로젝트 매니저</label>
+                                    <select class="form-select" id="pm_id" name="pm_id" required>
+                                        <option value="">선택하세요</option>
+                                        {% for user in users %}
+                                        {% if user.user_type == 'pm' or user.user_type == 'admin' %}
+                                        <option value="{{ user.id }}" {% if project.pm_id == user.id %}selected{% endif %}>
+                                            {{ user.name }} ({{ user.department or '부서없음' }})
+                                        </option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">상태</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="planning" {% if project.status == 'planning' %}selected{% endif %}>계획 중</option>
+                                <option value="in_progress" {% if project.status == 'in_progress' %}selected{% endif %}>진행 중</option>
+                                <option value="completed" {% if project.status == 'completed' %}selected{% endif %}>완료</option>
+                                <option value="suspended" {% if project.status == 'suspended' %}selected{% endif %}>중단</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">프로젝트 설명</label>
+                            <textarea class="form-control" id="description" name="description" rows="4">{{ project.description or '' }}</textarea>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">프로젝트 수정</button>
+                            <a href="{{ url_for('projects.view', id=project.id) }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 거래처 선택 시 해당 거래처의 담당자만 필터링
+        document.getElementById('client_company_id').addEventListener('change', function() {
+            const companyName = this.options[this.selectedIndex].text;
+            const contactSelect = document.getElementById('client_contact_id');
+            
+            // 모든 옵션 숨기기
+            for (let i = 0; i < contactSelect.options.length; i++) {
+                const option = contactSelect.options[i];
+                if (option.value === '') {
+                    // 첫 번째 '선택하세요' 옵션은 항상 표시
+                    option.style.display = '';
+                } else {
+                    // 선택된 회사에 속한 담당자만 표시
+                    if (this.value === '' || option.textContent.includes(companyName)) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                }
+            }
+            
+            // 선택된 값이 이제 보이지 않는 옵션이면 리셋
+            if (contactSelect.selectedIndex > 0) {
+                const selectedOption = contactSelect.options[contactSelect.selectedIndex];
+                if (selectedOption.style.display === 'none') {
+                    contactSelect.value = '';
+                }
+            }
+        });
+        
+        // 페이지 로드 시 거래처 필터링 초기 실행
+        document.getElementById('client_company_id').dispatchEvent(new Event('change'));
+    });
+</script>
+{% endblock %}

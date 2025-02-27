@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+
+{% block title %}사용자 정보 - {{ user.name }} - GFEM{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>사용자 정보</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-primary me-2">수정</a>
+        <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">목록으로 돌아가기</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <h3 class="mb-0">{{ user.name }}</h3>
+            <span class="ms-3">
+                {% if user.user_type == 'admin' %}
+                    <span class="badge bg-danger">관리자</span>
+                {% elif user.user_type == 'pm' %}
+                    <span class="badge bg-primary">PM</span>
+                {% elif user.user_type == 'engineer' %}
+                    <span class="badge bg-success">엔지니어</span>
+                {% elif user.user_type == 'client' %}
+                    <span class="badge bg-info">클라이언트</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table">
+                    <tr>
+                        <th style="width: 30%">사용자 ID</th>
+                        <td>{{ user.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>사용자명</th>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>이름</th>
+                        <td>{{ user.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>이메일</th>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>전화번호</th>
+                        <td>{{ user.phone or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>텔레그램 ID</th>
+                        <td>{{ user.telegram_id or '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table">
+                    <tr>
+                        <th style="width: 30%">회사</th>
+                        <td>{{ user.company or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>부서</th>
+                        <td>{{ user.department or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>직책</th>
+                        <td>{{ user.position or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>상태</th>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="badge bg-success">활성</span>
+                            {% else %}
+                                <span class="badge bg-secondary">비활성</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>마지막 로그인</th>
+                        <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '로그인 기록 없음' }}</td>
+                    </tr>
+                    <tr>
+                        <th>등록일</th>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

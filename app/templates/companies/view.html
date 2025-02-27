@@ -1,0 +1,79 @@
+<!-- 담당자 섹션 -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">담당자 목록</h5>
+        <a href="{{ url_for('client_contacts.create', company_id=company.id) }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus"></i> 새 담당자 추가
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>부서</th>
+                        <th>직급</th>
+                        <th>근무지</th>
+                        <th>전화번호</th>
+                        <th>이메일</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if company.contacts %}
+                        {% for contact in company.contacts %}
+                        <tr>
+                            <td>{{ contact.name }}</td>
+                            <td>{{ contact.department or '-' }}</td>
+                            <td>{{ contact.position or '-' }}</td>
+                            <td>{{ contact.location.location_name if contact.location else '-' }}</td>
+                            <td>{{ contact.phone or '-' }}</td>
+                            <td>{{ contact.email or '-' }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('client_contacts.view', id=contact.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('client_contacts.edit', id=contact.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteContactModal{{ contact.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- 삭제 확인 모달 -->
+                                <div class="modal fade" id="deleteContactModal{{ contact.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">담당자 삭제 확인</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>정말로 담당자 <strong>{{ contact.name }}</strong>을(를) 삭제하시겠습니까?</p>
+                                                <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                <form action="{{ url_for('client_contacts.delete', id=contact.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">삭제</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">등록된 담당자가 없습니다.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

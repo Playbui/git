@@ -1,0 +1,143 @@
+{% extends 'layout.html' %}
+
+{% block title %}거래처 관리{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>거래처 관리</h1>
+        <a href="{{ url_for('companies.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 새 거래처
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-0">거래처 목록</h5>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" id="companySearch" class="form-control" placeholder="거래처 검색...">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="companyTable">
+                    <thead>
+                        <tr>
+                            <th>거래처명</th>
+                            <th>사업자번호</th>
+                            <th>지역</th>
+                            <th>연락처</th>
+                            <th>이메일</th>
+                            <th>담당자</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if companies %}
+                        {% for company in companies %}
+                        <tr>
+                            <td>{{ company.company_name }}</td>
+                            <td>{{ company.business_number or '-' }}</td>
+                            <td>{{ company.region or '-' }}</td>
+                            <td>{{ company.main_phone or '-' }}</td>
+                            <td>{{ company.main_email or '-' }}</td>
+                            <td>
+                                {% set contacts = company.get_contacts() %}
+                                {% if contacts %}
+                                {{ contacts[0].name }} {% if contacts|length > 1 %}외 {{ contacts|length - 1 }}명{% endif %}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('companies.view', id=company.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('companies.edit', id=company.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ company.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- 삭제 확인 모달 -->
+                                <div class="modal fade" id="deleteModal{{ company.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ company.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ company.id }}">거래처 삭제 확인</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>정말로 거래처 <strong>{{ company.company_name }}</strong>을(를) 삭제하시겠습니까?</p>
+                                                <p class="text-danger">이 작업은 되돌릴 수 없으며, 관련된 프로젝트 및 담당자 정보에 영향을 줄 수 있습니다.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                <form action="{{ url_for('companies.delete', id=company.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">삭제</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">등록된 거래처가 없습니다.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 간단한 테이블 검색 기능
+        const searchInput = document.getElementById('companySearch');
+        const table = document.getElementById('companyTable');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const rowText = rows[i].textContent.toLowerCase();
+                if (rowText.indexOf(searchText) > -1) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

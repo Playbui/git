@@ -1,0 +1,180 @@
+{% extends 'layout.html' %}
+
+{% block title %}장소 관리{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .map-icon {
+        width: 30px;
+        height: 30px;
+        vertical-align: middle;
+    }
+    .btn-map {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.15rem 0.3rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>장소 관리</h1>
+        <a href="{{ url_for('locations.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 새 장소
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-0">장소 목록</h5>
+                </div>
+                <div class="col-md-6">
+                    <form id="searchForm" method="get" action="{{ url_for('locations.index') }}" class="input-group">
+                        <input type="text" 
+                               name="search" 
+                               id="locationSearch" 
+                               class="form-control" 
+                               placeholder="장소 검색..." 
+                               value="{{ request.args.get('search', '') }}">
+                        <button type="submit" id="searchButton" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="locationTable">
+                    <thead>
+                        <tr>
+                            <th>거래처</th>
+                            <th>장소명</th>
+                            <th>지역</th>
+                            <th>구분</th>
+                            <th>안전국/중계소</th>
+                            <th>주소</th>
+                            <th>담당자</th>
+                            <th>작업</th>
+                            <th>지도</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if locations %}
+                        {% for location in locations %}
+                        <tr>
+                            <td>{{ location.company.company_name }}</td>
+                            <td>{{ location.location_name }}</td>
+                            <td>{{ location.region }}</td>
+                            <td>{{ location.work_type }}</td>
+                            <td>
+                                {% if location.safety_bureau_name %}
+                                {{ location.safety_bureau_name }}
+                                {% elif location.relay_station %}
+                                {{ location.relay_station }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>{{ location.address }}</td>
+                            <td>{{ location.contact_person or '-' }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('locations.view', id=location.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('locations.edit', id=location.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ location.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- 삭제 확인 모달 -->
+                                <div class="modal fade" id="deleteModal{{ location.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ location.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ location.id }}">장소 삭제 확인</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>정말로 장소 <strong>{{ location.location_name }}</strong>을(를) 삭제하시겠습니까?</p>
+                                                <p class="text-danger">이 작업은 되돌릴 수 없으며, 관련된 장비 및 일정 정보에 영향을 줄 수 있습니다.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                <form action="{{ url_for('locations.delete', id=location.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">삭제</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="https://map.naver.com/v5/search/{{ location.address|urlencode }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-map">
+                                        <img src="https://search.pstatic.net/sunny/?src=https%3A%2F%2Fssl.pstatic.net%2Fstatic%2Fmaps%2Fm%2Ficon%2Fic_ad_map1_96X96.png&type=f30_30_png_expire24" 
+                                             alt="네이버 지도" 
+                                             class="map-icon">
+                                    </a>
+                                    <a href="https://map.kakao.com/?q={{ location.address|urlencode }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-map">
+                                        <img src="https://search.pstatic.net/sunny?src=https%3A%2F%2Fmap.kakao.com%2Ffavicon.ico&type=f30_30_png_expire24" 
+                                             alt="카카오 지도" 
+                                             class="map-icon">
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center">등록된 장소가 없습니다.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('locationSearch');
+
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchForm.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

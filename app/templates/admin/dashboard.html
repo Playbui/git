@@ -1,0 +1,189 @@
+{% extends "layout.html" %}
+
+{% block title %}관리자 대시보드 - GFEM{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>GFEM 관리자 대시보드</h1>
+        </div>
+    </div>
+
+    <!-- 퀵 액션 버튼 -->
+    <!-- 퀵 액션 버튼 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">빠른 등록</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col action-btn">
+                    <a href="{{ url_for('projects.create') }}" class="btn btn-danger btn-lg">
+                        <i class="fas fa-plus"></i><br>
+                        프로젝트
+                    </a>
+                </div>
+                <div class="col action-btn">
+                    <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus"></i><br>
+                        사용자
+                    </a>
+                </div>
+                <div class="col action-btn">
+                    <a href="{{ url_for('locations.create') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-plus"></i><br>
+                        장소
+                    </a>
+                </div>
+                <div class="col action-btn">
+                    <a href="#" class="btn btn-warning btn-lg">
+                        <i class="fas fa-plus"></i><br>
+                        일정
+                    </a>
+                </div>
+                <div class="col action-btn">
+                    <a href="#" class="btn btn-purple btn-lg">
+                        <i class="fas fa-plus"></i><br>
+                        체크리스트
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <!-- 일정 관리 -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">일정 관리</h5>
+                </div>
+                <div class="card-body">
+                    <!-- 캘린더 내용 -->
+                    <div class="calendar-container">
+                        <!-- 캘린더 헤더 -->
+                        <div class="calendar-header">
+                            <h3>2025년 2월</h3>
+                        </div>
+                        <!-- 캘린더 내용 -->
+                        <table class="calendar-table">
+                            <!-- 요일 헤더 -->
+                            <thead>
+                                <tr>
+                                    <th>일</th>
+                                    <th>월</th>
+                                    <th>화</th>
+                                    <th>수</th>
+                                    <th>목</th>
+                                    <th>금</th>
+                                    <th>토</th>
+                                </tr>
+                            </thead>
+                            <!-- 날짜 -->
+                            <tbody>
+                                <!-- 여기에 일정 데이터 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 체크리스트 및 장소 관리 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">체크리스트 템플릿</h5>
+                </div>
+                <div class="card-body">
+                    <!-- 체크리스트 항목 샘플 -->
+                    <div class="checklist-item">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check1">
+                            <label class="form-check-label" for="check1">서버 전원 상태 확인</label>
+                        </div>
+                    </div>
+                    <!-- 다른 체크리스트 항목 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">장소/장비 관리</h5>
+                </div>
+                <div class="card-body">
+                    <!-- 장소 목록 샘플 -->
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action">서울 중계소 A</a>
+                        <a href="#" class="list-group-item list-group-item-action">부산 안전국 B</a>
+                        <a href="#" class="list-group-item list-group-item-action">대구 중계소 C</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-purple {
+        background-color: #9b59b6;
+        color: white;
+    }
+    
+    .btn-purple:hover {
+        background-color: #8e44ad;
+        color: white;
+    }
+    
+    .action-btn {
+        text-align: center;
+    }
+    
+    .action-btn .btn {
+        width: 90%;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .calendar-container {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    
+    .calendar-header {
+        background-color: #3498db;
+        color: white;
+        padding: 10px;
+        text-align: center;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+    }
+    
+    .calendar-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    
+    .calendar-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .calendar-table th, .calendar-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    
+    .checklist-item {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}

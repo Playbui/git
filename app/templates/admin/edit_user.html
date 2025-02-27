@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+
+{% block title %}사용자 정보 수정 - {{ user.name }} - GFEM{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>사용자 정보 수정</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="btn btn-secondary">상세 정보로 돌아가기</a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <strong>{{ user.username }}</strong>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.edit_user', user_id=user.id) }}">
+                    {{ form.csrf_token }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">{{ form.name.label }}</label>
+                                {{ form.name(class="form-control") }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.name.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">{{ form.email.label }}</label>
+                                {{ form.email(class="form-control") }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.email.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="user_type" class="form-label">{{ form.user_type.label }}</label>
+                                {{ form.user_type(class="form-select") }}
+                                {% if form.user_type.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.user_type.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="department" class="form-label">{{ form.department.label }}</label>
+                                {{ form.department(class="form-control") }}
+                                {% if form.department.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.department.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="position" class="form-label">{{ form.position.label }}</label>
+                                {{ form.position(class="form-control") }}
+                                {% if form.position.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.position.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">{{ form.phone.label }}</label>
+                                {{ form.phone(class="form-control") }}
+                                {% if form.phone.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.phone.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="company" class="form-label">{{ form.company.label }}</label>
+                                {{ form.company(class="form-control") }}
+                                {% if form.company.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.company.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="telegram_id" class="form-label">{{ form.telegram_id.label }}</label>
+                                {{ form.telegram_id(class="form-control") }}
+                                <small class="text-muted">텔레그램 봇 연동을 위한 ID</small>
+                                {% if form.telegram_id.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.telegram_id.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 비밀번호 필드 추가 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">{{ form.new_password.label }}</label>
+                                {{ form.new_password(class="form-control") }}
+                                <small class="text-muted">비밀번호를 변경하지 않으려면 비워두세요.</small>
+                                {% if form.new_password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.new_password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">{{ form.confirm_password.label }}</label>
+                                {{ form.confirm_password(class="form-control") }}
+                                {% if form.confirm_password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.confirm_password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3 form-check mt-4">
+                                {{ form.is_active(class="form-check-input") }}
+                                <label class="form-check-label" for="is_active">{{ form.is_active.label }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

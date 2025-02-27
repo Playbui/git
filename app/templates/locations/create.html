@@ -1,0 +1,228 @@
+{% extends 'layout.html' %}
+
+{% block title %}장소 등록{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">새 장소 등록</h2>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('locations.create') }}">
+                        {{ form.csrf_token }}
+                        
+                        <h4 class="mb-3">기본 정보</h4>
+                        <div class="mb-3">
+                            <label for="company_id" class="form-label">{{ form.company_id.label }}</label>
+                            {{ form.company_id(class="form-select") }}
+                            {% if form.company_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.company_id.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="location_name" class="form-label">{{ form.location_name.label }}</label>
+                            {{ form.location_name(class="form-control") }}
+                            {% if form.location_name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.location_name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="region" class="form-label">{{ form.region.label }}</label>
+                                    {{ form.region(class="form-select") }}
+                                    {% if form.region.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.region.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="work_type" class="form-label">{{ form.work_type.label }}</label>
+                                    {{ form.work_type(class="form-select") }}
+                                    {% if form.work_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.work_type.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="safety_bureau_name" class="form-label">{{ form.safety_bureau_name.label }}</label>
+                                    {{ form.safety_bureau_name(class="form-control") }}
+                                    {% if form.safety_bureau_name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.safety_bureau_name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="relay_station" class="form-label">{{ form.relay_station.label }}</label>
+                                    {{ form.relay_station(class="form-control") }}
+                                    {% if form.relay_station.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.relay_station.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">{{ form.address.label }}</label>
+                            {{ form.address(class="form-control", rows="2") }}
+                            {% if form.address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.address.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="office_phone" class="form-label">{{ form.office_phone.label }}</label>
+                            {{ form.office_phone(class="form-control") }}
+                            {% if form.office_phone.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.office_phone.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <h4 class="mt-4 mb-3">담당자 지정</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">본사 담당자</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <label for="manager_ids" class="form-label">{{ form.manager_ids.label }}</label>
+                                        {{ form.manager_ids(class="form-select", multiple="multiple", size="8") }}
+                                        <small class="form-text text-muted">Ctrl 또는 Shift 키를 누른 상태에서 여러 담당자를 선택할 수 있습니다.</small>
+                                        {% if form.manager_ids.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.manager_ids.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">거래처 담당자</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <label for="client_ids" class="form-label">{{ form.client_ids.label }}</label>
+                                        {{ form.client_ids(class="form-select", multiple="multiple", size="8") }}
+                                        <small class="form-text text-muted">거래처 담당자를 선택하세요.</small>
+                                        {% if form.client_ids.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.client_ids.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="special_instructions" class="form-label">{{ form.special_instructions.label }}</label>
+                            {{ form.special_instructions(class="form-control", rows="3") }}
+                            {% if form.special_instructions.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.special_instructions.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('locations.index') }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 거래처 선택 시 해당 거래처의 담당자만 필터링
+        document.getElementById('company_id').addEventListener('change', function() {
+            const companyId = this.value;
+            const companyName = this.options[this.selectedIndex].text;
+            const clientSelect = document.getElementById('client_ids');
+            
+            // 모든 옵션 표시
+            for (let i = 0; i < clientSelect.options.length; i++) {
+                clientSelect.options[i].style.display = '';
+            }
+            
+            // 선택된 거래처가 있으면 해당 거래처 담당자만 표시
+            if (companyId > 0) {
+                for (let i = 0; i < clientSelect.options.length; i++) {
+                    const option = clientSelect.options[i];
+                    // 회사명이 포함되지 않은 옵션 숨기기
+                    if (!option.text.includes(companyName)) {
+                        option.style.display = 'none';
+                    }
+                }
+            }
+            
+            // 선택된 값들 초기화
+            Array.from(clientSelect.selectedOptions).forEach(option => {
+                if (option.style.display === 'none') {
+                    option.selected = false;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

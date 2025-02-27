@@ -1,0 +1,160 @@
+{% extends 'layout.html' %}
+
+{% block title %}프로젝트 관리{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>프로젝트 관리</h1>
+        <a href="{{ url_for('projects.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 새 프로젝트
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-0">프로젝트 목록</h5>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" id="projectSearch" class="form-control" placeholder="프로젝트 검색...">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="projectTable">
+                    <thead>
+                        <tr>
+                            <th>코드</th>
+                            <th>프로젝트명</th>
+                            <th>기간</th>
+                            <th>거래처</th>
+                            <th>PM</th>
+                            <th>상태</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if projects %}
+                        {% for project in projects %}
+                        <tr>
+                            <td>{{ project.project_code }}</td>
+                            <td>{{ project.project_name }}</td>
+                            <td>{{ project.start_date.strftime('%Y-%m-%d') }} ~ {{ project.end_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if project.client_company %}
+                                {{ project.client_company.company_name }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.project_manager %}
+                                {{ project.project_manager.name }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.status == 'planning' %}
+                                <span class="badge bg-warning">계획 중</span>
+                                {% elif project.status == 'in_progress' %}
+                                <span class="badge bg-primary">진행 중</span>
+                                {% elif project.status == 'completed' %}
+                                <span class="badge bg-success">완료</span>
+                                {% elif project.status == 'suspended' %}
+                                <span class="badge bg-danger">중단</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ project.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('projects.view', id=project.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('projects.edit', id=project.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ project.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- 삭제 확인 모달 -->
+                                <div class="modal fade" id="deleteModal{{ project.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ project.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ project.id }}">프로젝트 삭제 확인</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>정말로 프로젝트 <strong>{{ project.project_name }}</strong>을(를) 삭제하시겠습니까?</p>
+                                                <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                <form action="{{ url_for('projects.delete', id=project.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">삭제</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">등록된 프로젝트가 없습니다.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 간단한 테이블 검색 기능
+        const searchInput = document.getElementById('projectSearch');
+        const table = document.getElementById('projectTable');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const rowText = rows[i].textContent.toLowerCase();
+                if (rowText.indexOf(searchText) > -1) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

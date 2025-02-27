@@ -1,0 +1,176 @@
+{% extends 'layout.html' %}
+
+{% block title %}거래처 등록{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">새 거래처 등록</h2>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('companies.create') }}">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label for="company_name" class="form-label">{{ form.company_name.label }}</label>
+                            {{ form.company_name(class="form-control") }}
+                            {% if form.company_name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.company_name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="business_number" class="form-label">{{ form.business_number.label }}</label>
+                                    {{ form.business_number(class="form-control", placeholder="000-00-00000") }}
+                                    {% if form.business_number.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.business_number.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="company_type" class="form-label">{{ form.company_type.label }}</label>
+                                    {{ form.company_type(class="form-select") }}
+                                    {% if form.company_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.company_type.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 나머지 필드도 동일한 방식으로 구현 -->
+                        <div class="mb-3">
+                            <label for="industry" class="form-label">{{ form.industry.label }}</label>
+                            {{ form.industry(class="form-control") }}
+                            {% if form.industry.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.industry.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">{{ form.address.label }}</label>
+                            {{ form.address(class="form-control", rows="3") }}
+                            {% if form.address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.address.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="postal_code" class="form-label">{{ form.postal_code.label }}</label>
+                                    {{ form.postal_code(class="form-control") }}
+                                    {% if form.postal_code.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.postal_code.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="region" class="form-label">{{ form.region.label }}</label>
+                                    {{ form.region(class="form-select") }}
+                                    {% if form.region.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.region.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="main_phone" class="form-label">{{ form.main_phone.label }}</label>
+                                    {{ form.main_phone(class="form-control", placeholder="02-000-0000") }}
+                                    {% if form.main_phone.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.main_phone.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="main_email" class="form-label">{{ form.main_email.label }}</label>
+                                    {{ form.main_email(class="form-control") }}
+                                    {% if form.main_email.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.main_email.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="website" class="form-label">{{ form.website.label }}</label>
+                            {{ form.website(class="form-control", placeholder="https://") }}
+                            {% if form.website.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.website.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">{{ form.notes.label }}</label>
+                            {{ form.notes(class="form-control", rows="3") }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.notes.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('companies.index') }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
