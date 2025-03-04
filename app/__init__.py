@@ -45,5 +45,5 @@ def create_app(config_class=Config):
     
     return app
 
-# Vercel이 인식할 수 있도록 app 변수 정의
+# Vercel이 `app` 변수를 찾을 수 있도록 정의
 app = create_app()
