@@ -161,6 +161,12 @@ class ProjectForm(FlaskForm):
         ('completed', '완료'),
         ('suspended', '중단')
     ])
+    region = SelectField('지역', choices=[
+        ('본부', '본부'),
+        ('서해', '서해'),
+        ('남해', '남해'),
+        ('동해', '동해')
+    ], validators=[DataRequired()])
     description = TextAreaField('설명')
     submit = SubmitField('프로젝트 저장')
     
@@ -198,10 +204,13 @@ class LocationForm(FlaskForm):
     manager_ids = SelectMultipleField('본사 담당자', coerce=int, validators=[Optional()])
     client_ids = SelectMultipleField('거래처 담당자', coerce=int, validators=[Optional()])
     special_instructions = TextAreaField('특별 지시사항')
+    project_id = SelectField('프로젝트', coerce=int, validators=[Optional()])
     submit = SubmitField('장소 저장')
     
     def __init__(self, *args, **kwargs):
         super(LocationForm, self).__init__(*args, **kwargs)
+        from app.models.project import Project
+        
         # 거래처 목록 조회
         self.company_id.choices = [(0, '선택하세요')] + [
             (c.id, c.company_name) for c in Company.query.order_by(Company.company_name).all()
@@ -215,6 +224,11 @@ class LocationForm(FlaskForm):
         self.client_ids.choices = [
             (u.id, f"{u.name} ({u.company or '미지정'})") 
             for u in User.query.filter_by(user_type='client').all()
+        ]
+        # 프로젝트 목록
+        self.project_id.choices = [(0, '선택하세요')] + [
+            (p.id, f"{p.project_name} ({p.project_code})") 
+            for p in Project.query.order_by(Project.project_name).all()
         ]
 
 class EquipmentGroupForm(FlaskForm):
@@ -240,6 +254,7 @@ class EquipmentAttributeForm(FlaskForm):
 
 class EquipmentForm(FlaskForm):
     """장비 정보 관리 폼"""
+    location_id = SelectField('설치 장소', coerce=int, validators=[DataRequired()])
     equipment_group_id = SelectField('장비 그룹', coerce=int, validators=[DataRequired()])
     equipment_name = StringField('장비명', validators=[DataRequired(), Length(max=255)])
     manufacturer = StringField('제조사', validators=[Length(max=100)])
@@ -262,11 +277,25 @@ class EquipmentForm(FlaskForm):
     def __init__(self, *args, equipment_group=None, **kwargs):
         super(EquipmentForm, self).__init__(*args, **kwargs)
         from app.models.equipment import EquipmentGroup, EquipmentAttribute
+        from app.models.location import Location
         
         # 장비 그룹 선택 옵션 초기화
         self.equipment_group_id.choices = [(0, '선택하세요')] + [
             (g.id, g.name) for g in EquipmentGroup.query.order_by(EquipmentGroup.name).all()
         ]
+        
+        # 장소 선택 옵션 초기화
+        try:
+            self.location_id.choices = [(0, '선택하세요')] + [
+                (l.id, f"{l.location_name} ({l.company.company_name})") 
+                for l in Location.query.order_by(Location.location_name).all()
+            ]
+        except Exception as e:
+            # 회사 관련 오류 발생 시 간단한 형식으로 표시
+            self.location_id.choices = [(0, '선택하세요')] + [
+                (l.id, l.location_name) 
+                for l in Location.query.order_by(Location.location_name).all()
+            ]
         
         # 특정 그룹이 선택된 경우, 해당 그룹의 커스텀 필드 생성
         if equipment_group:

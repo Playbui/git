@@ -386,11 +386,10 @@ def create():
     """장비 생성 페이지"""
     # 장소 ID 가져오기
     location_id = request.args.get('location_id', 0, type=int)
-    if not location_id:
-        flash('장비 등록을 위해 장소를 선택해주세요.', 'warning')
-        return redirect(url_for('equipment.list'))
-        
-    location = Location.query.get_or_404(location_id)
+    location = None
+    
+    if location_id > 0:
+        location = Location.query.get(location_id)
     
     # 그룹 ID 가져오기
     group_id = request.args.get('group_id', 0, type=int)
@@ -414,20 +413,6 @@ def create():
                 # 그룹 정보 가져오기
                 group = EquipmentGroup.query.get(selected_group_id)
                 
-                # 새 장비 객체 생성
-                new_equipment = Equipment(
-                    location_id=location.id,
-                    equipment_group_id=selected_group_id,
-                    equipment_name=form.equipment_name.data,
-                    manufacturer=form.manufacturer.data,
-                    model_number=form.model_number.data,
-                    serial_number=form.serial_number.data,
-                    installation_date=form.installation_date.data,
-                    warranty_end_date=form.warranty_end_date.data,
-                    status=form.status.data,
-                    notes=form.notes.data
-                )
-                
                 # 커스텀 속성 수집 (기존 WTForm 필드 또는 직접 요청 데이터에서)
                 custom_attributes = {}
                 
@@ -445,14 +430,81 @@ def create():
                         if attr_name not in custom_attributes:  # 중복 방지
                             custom_attributes[attr_name] = value
                 
-                # 커스텀 속성 저장
-                new_equipment.set_custom_attributes(custom_attributes)
+                # JSON으로 변환
+                custom_attributes_json = json.dumps(custom_attributes)
                 
-                db.session.add(new_equipment)
-                db.session.commit()
+                # 선택된 장소 확인
+                selected_location_id = form.location_id.data
+                if selected_location_id == 0:
+                    flash('올바른 장소를 선택해주세요.', 'danger')
+                    return render_template('equipment/create.html', form=form, location=location, equipment_group=equipment_group)
+                
+                try:
+                    # ORM 방식으로 데이터 생성 시도
+                    new_equipment = Equipment(
+                        location_id=selected_location_id,
+                        equipment_group_id=selected_group_id,
+                        equipment_name=form.equipment_name.data,
+                        manufacturer=form.manufacturer.data,
+                        model_number=form.model_number.data,
+                        serial_number=form.serial_number.data,
+                        installation_date=form.installation_date.data,
+                        warranty_end_date=form.warranty_end_date.data,
+                        status=form.status.data,
+                        notes=form.notes.data
+                    )
+                    new_equipment.set_custom_attributes(custom_attributes)
+                    
+                    db.session.add(new_equipment)
+                    db.session.commit()
+                except Exception as orm_error:
+                    # ORM 에러 시, 직접 SQL로 수행
+                    db.session.rollback()
+                    
+                    # 오류 메시지에 'equipment_group' 포함 시 equipment_group 값 설정
+                    if 'equipment_group' in str(orm_error) and 'null value' in str(orm_error):
+                        try:
+                            # 직접 SQL 실행
+                            sql = """
+                            INSERT INTO equipment 
+                            (location_id, equipment_group_id, equipment_group, equipment_name, 
+                             serial_number, manufacturer, model_number, installation_date, 
+                             warranty_end_date, status, notes, custom_attributes, created_at, updated_at)
+                            VALUES 
+                            (:location_id, :equipment_group_id, :equipment_group, :equipment_name, 
+                             :serial_number, :manufacturer, :model_number, :installation_date, 
+                             :warranty_end_date, :status, :notes, :custom_attributes, NOW(), NOW())
+                            RETURNING id
+                            """
+                            
+                            # equipment_group 값 설정 (그룹 ID 또는 그룹 이름으로)
+                            equipment_group_value = group.id  # ID로 설정하거나
+                            
+                            result = db.session.execute(sql, {
+                                'location_id': selected_location_id,
+                                'equipment_group_id': selected_group_id,
+                                'equipment_group': equipment_group_value,  # equipment_group 컬럼 값 설정
+                                'equipment_name': form.equipment_name.data,
+                                'serial_number': form.serial_number.data or '',
+                                'manufacturer': form.manufacturer.data or '',
+                                'model_number': form.model_number.data or '',
+                                'installation_date': form.installation_date.data,
+                                'warranty_end_date': form.warranty_end_date.data,
+                                'status': form.status.data,
+                                'notes': form.notes.data or '',
+                                'custom_attributes': custom_attributes_json
+                            })
+                            db.session.commit()
+                        except Exception as sql_error:
+                            db.session.rollback()
+                            # SQL 실행 중 오류 - 원래 오류 재발생
+                            raise orm_error
+                    else:
+                        # 다른 유형의 오류면 원래 오류 재발생
+                        raise
                 
                 flash('장비가 성공적으로 추가되었습니다.', 'success')
-                return redirect(url_for('equipment.location_equipment', location_id=location.id))
+                return redirect(url_for('equipment.location_equipment', location_id=selected_location_id))
             else:
                 for field, errors in form.errors.items():
                     for error in errors:
