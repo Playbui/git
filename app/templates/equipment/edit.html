@@ -22,11 +22,11 @@
                     {% endif %}
                     {% endwith %}
                     
-                    <form method="POST" action="{{ url_for('equipment.edit', id=equipment.id) }}">
+                    <form method="POST" action="{{ url_for('equipment.edit', id=equipment.id) }}" id="equipment-form">
                         {{ form.csrf_token }}
                         
                         <h4 class="mb-3">장비 그룹: {{ group.name }}</h4>
-                        <input type="hidden" name="equipment_group_id" value="{{ group.id }}">
+                        <input type="hidden" name="equipment_group_id" id="equipment_group_id" value="{{ group.id }}">
                         
                         <h4 class="mt-4 mb-3">기본 정보</h4>
                         <div class="mb-3">
@@ -142,36 +142,6 @@
                         
                         <!-- 동적 커스텀 필드 -->
                         <div id="custom-fields">
-                            <h4 class="mt-4 mb-3">{{ group.name }} 속성</h4>
-                            {% for attr in group.attributes %}
-                            <div class="mb-3">
-                                {% set field_name = 'custom_' ~ attr.name %}
-                                {% if field_name in form._fields %}
-                                    <label for="{{ field_name }}" class="form-label">
-                                        {{ attr.label }}
-                                        {% if attr.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    
-                                    {% if attr.field_type == 'text' %}
-                                        {{ form[field_name](class="form-control") }}
-                                    {% elif attr.field_type == 'number' %}
-                                        {{ form[field_name](class="form-control", type="number") }}
-                                    {% elif attr.field_type == 'date' %}
-                                        {{ form[field_name](class="form-control", type="date") }}
-                                    {% elif attr.field_type == 'select' %}
-                                        {{ form[field_name](class="form-select") }}
-                                    {% endif %}
-                                    
-                                    {% if form[field_name].errors %}
-                                        <div class="text-danger">
-                                            {% for error in form[field_name].errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                            {% endfor %}
                         </div>
                         
                         <div class="mt-4">
@@ -184,4 +154,152 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const groupId = document.getElementById('equipment_group_id').value;
+        const customFieldsContainer = document.getElementById('custom-fields');
+        
+        // 페이지 로드 시 속성 필드 로드
+        if (groupId > 0) {
+            fetchAndRenderAttributes(groupId);
+        }
+        
+        // 속성 로드 및 렌더링 함수
+        function fetchAndRenderAttributes(groupId) {
+            // AJAX로 해당 그룹의 속성 정보 가져오기
+            fetch(`/equipment/api/group/${groupId}/attributes`)
+                .then(response => response.json())
+                .then(data => {
+                    // 기존 속성 필드 제거
+                    customFieldsContainer.innerHTML = '';
+                    
+                    if (data.attributes && data.attributes.length > 0) {
+                        // 그룹 속성 헤더 추가
+                        const groupTitle = document.createElement('h4');
+                        groupTitle.className = 'mt-4 mb-3';
+                        groupTitle.textContent = '{{ group.name }} 속성';
+                        customFieldsContainer.appendChild(groupTitle);
+                        
+                        // 각 속성에 대한 입력 필드 생성
+                        data.attributes.forEach(attr => {
+                            renderAttributeField(attr);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('속성 정보를 불러오는 중 오류가 발생했습니다:', error);
+                });
+        }
+        
+        // 속성 필드 렌더링 함수
+        function renderAttributeField(attr) {
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'mb-3';
+            
+            // 라벨 생성
+            const label = document.createElement('label');
+            label.className = 'form-label';
+            label.htmlFor = `custom_${attr.name}`;
+            label.textContent = attr.label;
+            
+            // 필수 필드 표시
+            if (attr.required) {
+                const requiredSpan = document.createElement('span');
+                requiredSpan.className = 'text-danger';
+                requiredSpan.textContent = ' *';
+                label.appendChild(requiredSpan);
+            }
+            
+            fieldDiv.appendChild(label);
+            
+            // 필드 타입에 따른 입력 요소 생성
+            let inputElement;
+            
+            switch (attr.field_type) {
+                case 'text':
+                    inputElement = document.createElement('input');
+                    inputElement.type = 'text';
+                    inputElement.className = 'form-control';
+                    break;
+                    
+                case 'number':
+                    inputElement = document.createElement('input');
+                    inputElement.type = 'number';
+                    inputElement.className = 'form-control';
+                    break;
+                    
+                case 'date':
+                    inputElement = document.createElement('input');
+                    inputElement.type = 'date';
+                    inputElement.className = 'form-control';
+                    break;
+                    
+                case 'select':
+                    inputElement = document.createElement('select');
+                    inputElement.className = 'form-select';
+                    
+                    // 빈 옵션 추가
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = '선택하세요';
+                    inputElement.appendChild(emptyOption);
+                    
+                    // 선택 옵션 추가
+                    if (attr.options && attr.options.length > 0) {
+                        attr.options.forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option;
+                            optionElement.textContent = option;
+                            inputElement.appendChild(optionElement);
+                        });
+                    }
+                    break;
+                    
+                default:
+                    inputElement = document.createElement('input');
+                    inputElement.type = 'text';
+                    inputElement.className = 'form-control';
+            }
+            
+            // 공통 속성 설정
+            inputElement.id = `custom_${attr.name}`;
+            inputElement.name = `custom_${attr.name}`;
+            
+            // 필수 필드 설정
+            if (attr.required) {
+                inputElement.required = true;
+            }
+            
+            // API를 통해 현재 장비의 속성값 가져와서 설정
+            fetch(`/equipment/{{ equipment.id }}/api/attributes`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data[attr.name] !== undefined) {
+                        const value = data[attr.name];
+                        if (attr.field_type === 'select') {
+                            // 선택 상자의 경우 옵션 선택
+                            const options = inputElement.querySelectorAll('option');
+                            options.forEach(option => {
+                                if (option.value === String(value)) {
+                                    option.selected = true;
+                                }
+                            });
+                        } else {
+                            // 다른 필드 유형의 경우 값 설정
+                            inputElement.value = value;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('장비 속성 값을 불러오는 중 오류가 발생했습니다:', error);
+                });
+            
+            fieldDiv.appendChild(inputElement);
+            customFieldsContainer.appendChild(fieldDiv);
+        }
+    });
+</script>
 {% endblock %}

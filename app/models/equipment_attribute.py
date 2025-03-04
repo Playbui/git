@@ -1,6 +1,7 @@
 from app import db
 from datetime import datetime
 
+
 class EquipmentAttributeDefinition(db.Model):
     __tablename__ = 'equipment_attribute_definitions'
     
@@ -20,6 +21,7 @@ class EquipmentAttributeDefinition(db.Model):
 
 class EquipmentAttribute(db.Model):
     __tablename__ = 'equipment_attributes'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     equipment_id = db.Column(db.Integer, db.ForeignKey('equipment.id'), nullable=False)

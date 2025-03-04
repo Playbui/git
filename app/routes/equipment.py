@@ -140,18 +140,46 @@ def create_attribute(group_id):
                     max_order = db.session.query(db.func.max(EquipmentAttribute.order)).filter_by(group_id=group.id).scalar()
                     order = 1 if max_order is None else max_order + 1
                 
-                attribute = EquipmentAttribute(
-                    group_id=group.id,
-                    name=form.name.data,
-                    label=form.label.data,
-                    field_type=form.field_type.data,
-                    required=form.required.data,
-                    options=options,
-                    order=order
-                )
-                
-                db.session.add(attribute)
-                db.session.commit()
+                # updated_at이 모델에 없으면 제외하고 생성
+                try:
+                    attribute = EquipmentAttribute(
+                        group_id=group.id,
+                        name=form.name.data,
+                        label=form.label.data,
+                        field_type=form.field_type.data,
+                        required=form.required.data,
+                        options=options,
+                        order=order
+                    )
+                    
+                    db.session.add(attribute)
+                    db.session.commit()
+                except Exception as e:
+                    # updated_at 컬럼 관련 오류인 경우 데이터베이스 유지보수 필요함을 알림
+                    if 'updated_at' in str(e):
+                        flash('데이터베이스 스키마가 최신 모델과 일치하지 않습니다. 데이터베이스 마이그레이션이 필요합니다.', 'warning')
+                        # 하지만 일단 속성은 추가 시도
+                        db.session.rollback()
+                        # 직접 SQL 실행으로 updated_at 필드 없이 추가
+                        sql = """
+                        INSERT INTO equipment_attributes 
+                        (group_id, name, label, field_type, required, options, "order", created_at) 
+                        VALUES (:group_id, :name, :label, :field_type, :required, :options, :order, :created_at)
+                        """
+                        db.session.execute(sql, {
+                            'group_id': group.id, 
+                            'name': form.name.data,
+                            'label': form.label.data, 
+                            'field_type': form.field_type.data,
+                            'required': form.required.data,
+                            'options': options,
+                            'order': order,
+                            'created_at': datetime.utcnow()
+                        })
+                        db.session.commit()
+                    else:
+                        # 다른 오류면 다시 발생시킴
+                        raise
                 
                 flash('속성이 성공적으로 추가되었습니다.', 'success')
                 return redirect(url_for('equipment.group_detail', id=group.id))
@@ -198,24 +226,60 @@ def edit_attribute(id):
                     flash(f'이미 같은 이름의 속성이 존재합니다: {form.name.data}', 'danger')
                     return render_template('equipment/attribute_edit.html', form=form, attribute=attribute, group=group)
                 
-                # 기본 필드 값 업데이트
-                attribute.name = form.name.data
-                attribute.label = form.label.data
-                attribute.field_type = form.field_type.data
-                attribute.required = form.required.data
-                
-                # order 값이 변경된 경우
-                if form.order.data != attribute.order:
-                    attribute.order = form.order.data or 1
-                
-                # 옵션 값 처리
-                if form.field_type.data == 'select' and form.options.data:
-                    options_list = [opt.strip() for opt in form.options.data.split('\n') if opt.strip()]
-                    attribute.options = json.dumps(options_list)
-                else:
-                    attribute.options = None
-                
-                db.session.commit()
+                # 직접 SQL로 업데이트하여 updated_at 오류 방지
+                try:
+                    # 기본 필드 값 업데이트
+                    attribute.name = form.name.data
+                    attribute.label = form.label.data
+                    attribute.field_type = form.field_type.data
+                    attribute.required = form.required.data
+                    
+                    # order 값이 변경된 경우
+                    if form.order.data != attribute.order:
+                        attribute.order = form.order.data or 1
+                    
+                    # 옵션 값 처리
+                    if form.field_type.data == 'select' and form.options.data:
+                        options_list = [opt.strip() for opt in form.options.data.split('\n') if opt.strip()]
+                        attribute.options = json.dumps(options_list)
+                    else:
+                        attribute.options = None
+                    
+                    db.session.commit()
+                except Exception as e:
+                    # updated_at 컬럼 관련 오류인 경우 직접 SQL로 처리
+                    if 'updated_at' in str(e):
+                        db.session.rollback()
+                        
+                        # 옵션 처리
+                        options = None
+                        if form.field_type.data == 'select' and form.options.data:
+                            options_list = [opt.strip() for opt in form.options.data.split('\n') if opt.strip()]
+                            options = json.dumps(options_list)
+                        
+                        # SQL로 직접 업데이트
+                        sql = """
+                        UPDATE equipment_attributes 
+                        SET name = :name, label = :label, field_type = :field_type, 
+                            required = :required, options = :options, "order" = :order
+                        WHERE id = :id
+                        """
+                        db.session.execute(sql, {
+                            'name': form.name.data,
+                            'label': form.label.data,
+                            'field_type': form.field_type.data,
+                            'required': form.required.data,
+                            'options': options,
+                            'order': form.order.data or 1,
+                            'id': attribute.id
+                        })
+                        db.session.commit()
+                        
+                        # 세션 갱신 (객체 상태 업데이트)
+                        db.session.refresh(attribute)
+                    else:
+                        # 다른 오류면 다시 발생시킴
+                        raise
                 
                 flash('속성이 성공적으로 업데이트되었습니다.', 'success')
                 return redirect(url_for('equipment.group_detail', id=group.id))
@@ -236,8 +300,21 @@ def delete_attribute(id):
     group_id = attribute.group_id
     
     try:
-        db.session.delete(attribute)
-        db.session.commit()
+        # ORM으로 삭제 시도
+        try:
+            db.session.delete(attribute)
+            db.session.commit()
+        except Exception as e:
+            # 오류 발생 시 SQL로 직접 삭제
+            if 'updated_at' in str(e):
+                db.session.rollback()
+                sql = "DELETE FROM equipment_attributes WHERE id = :id"
+                db.session.execute(sql, {'id': id})
+                db.session.commit()
+            else:
+                # 다른 오류면 다시 발생시킴
+                raise
+                
         flash('속성이 성공적으로 삭제되었습니다.', 'success')
     except Exception as e:
         db.session.rollback()
@@ -324,7 +401,7 @@ def create():
     
     form = EquipmentForm(equipment_group=equipment_group)
     
-    if form.validate_on_submit():
+    if request.method == 'POST':
         try:
             # 선택된 그룹 확인
             selected_group_id = form.equipment_group_id.data
@@ -332,44 +409,55 @@ def create():
                 flash('올바른 장비 그룹을 선택해주세요.', 'danger')
                 return render_template('equipment/create.html', form=form, location=location)
             
-            # 이전에 선택된 그룹과 다른 그룹이 선택된 경우 해당 그룹으로 진행
-            # 리다이렉트 하지 않고 현재 폼 정보로 진행
-            if equipment_group and equipment_group.id != selected_group_id:
-                new_group = EquipmentGroup.query.get(selected_group_id)
-                equipment_group = new_group
-            
-            # 새 장비 객체 생성
-            new_equipment = Equipment(
-                location_id=location.id,
-                equipment_group_id=selected_group_id,
-                equipment_name=form.equipment_name.data,
-                manufacturer=form.manufacturer.data,
-                model_number=form.model_number.data,
-                serial_number=form.serial_number.data,
-                installation_date=form.installation_date.data,
-                warranty_end_date=form.warranty_end_date.data,
-                status=form.status.data,
-                notes=form.notes.data
-            )
-            
-            # 커스텀 속성 수집
-            group = EquipmentGroup.query.get(selected_group_id)
-            custom_attributes = {}
-            
-            for attr in group.attributes.all():
-                field_name = f'custom_{attr.name}'
-                if hasattr(form, field_name):
-                    value = getattr(form, field_name).data
-                    custom_attributes[attr.name] = value
-            
-            # 커스텀 속성 저장
-            new_equipment.set_custom_attributes(custom_attributes)
-            
-            db.session.add(new_equipment)
-            db.session.commit()
-            
-            flash('장비가 성공적으로 추가되었습니다.', 'success')
-            return redirect(url_for('equipment.location_equipment', location_id=location.id))
+            # 폼 기본 검증
+            if form.validate_on_submit():
+                # 그룹 정보 가져오기
+                group = EquipmentGroup.query.get(selected_group_id)
+                
+                # 새 장비 객체 생성
+                new_equipment = Equipment(
+                    location_id=location.id,
+                    equipment_group_id=selected_group_id,
+                    equipment_name=form.equipment_name.data,
+                    manufacturer=form.manufacturer.data,
+                    model_number=form.model_number.data,
+                    serial_number=form.serial_number.data,
+                    installation_date=form.installation_date.data,
+                    warranty_end_date=form.warranty_end_date.data,
+                    status=form.status.data,
+                    notes=form.notes.data
+                )
+                
+                # 커스텀 속성 수집 (기존 WTForm 필드 또는 직접 요청 데이터에서)
+                custom_attributes = {}
+                
+                # 1. 먼저 폼에 정의된 속성 필드 처리
+                for attr in group.attributes.all():
+                    field_name = f'custom_{attr.name}'
+                    if hasattr(form, field_name):
+                        value = getattr(form, field_name).data
+                        custom_attributes[attr.name] = value
+                
+                # 2. 폼에 정의되지 않았지만 동적으로 추가된 필드 처리
+                for key, value in request.form.items():
+                    if key.startswith('custom_'):
+                        attr_name = key[7:]  # 'custom_' 접두사 제거
+                        if attr_name not in custom_attributes:  # 중복 방지
+                            custom_attributes[attr_name] = value
+                
+                # 커스텀 속성 저장
+                new_equipment.set_custom_attributes(custom_attributes)
+                
+                db.session.add(new_equipment)
+                db.session.commit()
+                
+                flash('장비가 성공적으로 추가되었습니다.', 'success')
+                return redirect(url_for('equipment.location_equipment', location_id=location.id))
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f'{getattr(form, field).label.text}: {error}', 'danger')
+                
         except Exception as e:
             db.session.rollback()
             flash(f'장비 추가 중 오류가 발생했습니다: {str(e)}', 'danger')
@@ -417,35 +505,59 @@ def edit(id):
                 if hasattr(form, field_name) and attr.name in custom_attributes:
                     field = getattr(form, field_name)
                     field.data = custom_attributes[attr.name]
+                    
+        # 템플릿에서 사용할 JSON 형태의 커스텀 속성값
+        custom_attributes_json = json.dumps(equipment.get_custom_attributes())
         
-        if form.validate_on_submit():
-            try:
-                # 폼에서 기본 데이터 업데이트
-                form.populate_obj(equipment)
-                
-                # 커스텀 속성 업데이트
-                custom_attributes = {}
-                
-                for attr in group.attributes.all():
-                    field_name = f'custom_{attr.name}'
-                    if hasattr(form, field_name):
-                        value = getattr(form, field_name).data
-                        custom_attributes[attr.name] = value
-                
-                equipment.set_custom_attributes(custom_attributes)
-                
-                db.session.commit()
-                
-                flash('장비 정보가 성공적으로 업데이트되었습니다.', 'success')
-                return redirect(url_for('equipment.detail', id=equipment.id))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'장비 정보 업데이트 중 오류가 발생했습니다: {str(e)}', 'danger')
+        if request.method == 'POST':
+            # 폼 기본 검증
+            if form.validate_on_submit():
+                try:
+                    # 폼에서 기본 데이터 업데이트
+                    form.populate_obj(equipment)
+                    
+                    # 커스텀 속성 업데이트
+                    custom_attributes = {}
+                    
+                    # 1. 먼저 폼에 정의된 속성 필드 처리
+                    for attr in group.attributes.all():
+                        field_name = f'custom_{attr.name}'
+                        if hasattr(form, field_name):
+                            value = getattr(form, field_name).data
+                            custom_attributes[attr.name] = value
+                    
+                    # 2. 폼에 정의되지 않았지만 동적으로 추가된 필드 처리
+                    for key, value in request.form.items():
+                        if key.startswith('custom_'):
+                            attr_name = key[7:]  # 'custom_' 접두사 제거
+                            if attr_name not in custom_attributes:  # 중복 방지
+                                custom_attributes[attr_name] = value
+                    
+                    # 이전 속성 값도 보존 (해당 그룹의 속성이 아닌 경우)
+                    prev_attrs = equipment.get_custom_attributes()
+                    for key, value in prev_attrs.items():
+                        if key not in custom_attributes:
+                            custom_attributes[key] = value
+                    
+                    equipment.set_custom_attributes(custom_attributes)
+                    
+                    db.session.commit()
+                    
+                    flash('장비 정보가 성공적으로 업데이트되었습니다.', 'success')
+                    return redirect(url_for('equipment.detail', id=equipment.id))
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f'장비 정보 업데이트 중 오류가 발생했습니다: {str(e)}', 'danger')
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f'{getattr(form, field).label.text}: {error}', 'danger')
         
         return render_template('equipment/edit.html', 
                             form=form, 
                             equipment=equipment, 
-                            group=group)
+                            group=group,
+                            custom_attributes_json=custom_attributes_json)
     except Exception as e:
         flash(f'장비 수정 페이지를 불러오는 중 오류가 발생했습니다: {str(e)}', 'danger')
         return redirect(url_for('equipment.list'))
@@ -491,3 +603,10 @@ def api_group_attributes(group_id):
         attributes.append(attr_data)
     
     return jsonify({'group_id': group_id, 'attributes': attributes})
+
+@equipment_bp.route('/<int:id>/api/attributes')
+@login_required
+def api_equipment_attributes(id):
+    """특정 장비의 커스텀 속성 값을 JSON으로 반환"""
+    equipment = Equipment.query.get_or_404(id)
+    return jsonify(equipment.get_custom_attributes())

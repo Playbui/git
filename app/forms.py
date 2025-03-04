@@ -1,12 +1,23 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField, SubmitField, BooleanField, TextAreaField, DecimalField, SelectMultipleField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, Regexp
 from app.models.user import User
 from wtforms import DateField
 from app.models.company import Company
+import re
+
+class LoginForm(FlaskForm):
+    username = StringField('사용자명', validators=[DataRequired()])
+    password = PasswordField('비밀번호', validators=[DataRequired()])
+    remember_me = BooleanField('로그인 상태 유지')
+    submit = SubmitField('로그인')
 
 class RegistrationForm(FlaskForm):
-    username = StringField('사용자명', validators=[DataRequired(), Length(min=4, max=50)])
+    username = StringField('사용자명', validators=[
+        DataRequired(), 
+        Length(min=4, max=50),
+        Regexp('^[A-Za-z0-9_]+$', message='사용자명은 영문자, 숫자, 언더스코어만 포함해야 합니다')
+    ])
     name = StringField('이름', validators=[DataRequired(), Length(max=100)])
     email = StringField('이메일', validators=[DataRequired(), Email(), Length(max=100)])
     user_type = SelectField('사용자 유형', choices=[
@@ -15,7 +26,10 @@ class RegistrationForm(FlaskForm):
         ('engineer', '엔지니어'),
         ('client', '클라이언트')
     ])
-    password = PasswordField('비밀번호', validators=[DataRequired(), Length(min=6)])
+    password = PasswordField('비밀번호', validators=[
+        DataRequired(), 
+        Length(min=8, message='비밀번호는 8자 이상이어야 합니다')
+    ])
     confirm_password = PasswordField('비밀번호 확인', 
                                     validators=[DataRequired(), EqualTo('password')])
     department = StringField('부서', validators=[Length(max=100)])
@@ -29,18 +43,49 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError('이미 사용 중인 사용자명입니다. 다른 사용자명을 선택하세요.')
-            
+    
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError('이미 사용 중인 이메일입니다. 다른 이메일을 입력하세요.')
+    
+    def validate_password(self, password):
+        """비밀번호 복잡성 검증"""
+        pw = password.data
+        
+        # 비밀번호 복잡성 검증
+        if not any(char.isdigit() for char in pw):
+            raise ValidationError('비밀번호는 최소 1개 이상의 숫자를 포함해야 합니다.')
+            
+        if not any(char.isupper() for char in pw):
+            raise ValidationError('비밀번호는 최소 1개 이상의 대문자를 포함해야 합니다.')
+            
+        if not any(char in '!@#$%^&*()_-+=<>,.?/:;\'"|\\{}[]~`' for char in pw):
+            raise ValidationError('비밀번호는 최소 1개 이상의 특수문자를 포함해야 합니다.')
 
 class ChangePasswordForm(FlaskForm):
     current_password = PasswordField('현재 비밀번호', validators=[DataRequired()])
-    new_password = PasswordField('새 비밀번호', validators=[DataRequired(), Length(min=6)])
+    new_password = PasswordField('새 비밀번호', validators=[
+        DataRequired(), 
+        Length(min=8, message='비밀번호는 8자 이상이어야 합니다')
+    ])
     confirm_password = PasswordField('새 비밀번호 확인', 
                                     validators=[DataRequired(), EqualTo('new_password')])
     submit = SubmitField('비밀번호 변경')
+    
+    def validate_new_password(self, password):
+        """비밀번호 복잡성 검증"""
+        pw = password.data
+        
+        # 비밀번호 복잡성 검증
+        if not any(char.isdigit() for char in pw):
+            raise ValidationError('비밀번호는 최소 1개 이상의 숫자를 포함해야 합니다.')
+            
+        if not any(char.isupper() for char in pw):
+            raise ValidationError('비밀번호는 최소 1개 이상의 대문자를 포함해야 합니다.')
+            
+        if not any(char in '!@#$%^&*()_-+=<>,.?/:;\'"|\\{}[]~`' for char in pw):
+            raise ValidationError('비밀번호는 최소 1개 이상의 특수문자를 포함해야 합니다.')
 
 class UserEditForm(FlaskForm):
     name = StringField('이름', validators=[DataRequired(), Length(max=100)])
@@ -57,7 +102,7 @@ class UserEditForm(FlaskForm):
     company = StringField('회사명', validators=[Optional(), Length(max=100)])
     telegram_id = StringField('텔레그램 ID', validators=[Optional(), Length(max=100)])
     is_active = BooleanField('활성 상태')
-    new_password = PasswordField('새 비밀번호', validators=[Optional(), Length(min=6)])
+    new_password = PasswordField('새 비밀번호', validators=[Optional(), Length(min=8)])
     confirm_password = PasswordField('새 비밀번호 확인', 
                                     validators=[Optional(), EqualTo('new_password')])
     submit = SubmitField('사용자 정보 수정')
@@ -71,6 +116,21 @@ class UserEditForm(FlaskForm):
             user = User.query.filter_by(email=email.data).first()
             if user:
                 raise ValidationError('이미 사용 중인 이메일입니다. 다른 이메일을 입력하세요.')
+                
+    def validate_new_password(self, password):
+        """비밀번호 복잡성 검증 - 새 비밀번호가 있는 경우만 실행"""
+        if password.data:
+            pw = password.data
+            
+            # 비밀번호 복잡성 검증
+            if not any(char.isdigit() for char in pw):
+                raise ValidationError('비밀번호는 최소 1개 이상의 숫자를 포함해야 합니다.')
+                
+            if not any(char.isupper() for char in pw):
+                raise ValidationError('비밀번호는 최소 1개 이상의 대문자를 포함해야 합니다.')
+                
+            if not any(char in '!@#$%^&*()_-+=<>,.?/:;\'"|\\{}[]~`' for char in pw):
+                raise ValidationError('비밀번호는 최소 1개 이상의 특수문자를 포함해야 합니다.')
 
 class UserFilterForm(FlaskForm):
     user_type = SelectField('사용자 유형', choices=[
@@ -210,28 +270,29 @@ class EquipmentForm(FlaskForm):
         
         # 특정 그룹이 선택된 경우, 해당 그룹의 커스텀 필드 생성
         if equipment_group:
-            for attr in equipment_group.attributes.order_by(EquipmentAttribute.order).all():
-                field_name = f'custom_{attr.name}'
-                
-                # 필드 타입에 따라 다른 폼 필드 생성
-                if attr.field_type == 'text':
-                    field = StringField(attr.label, validators=[Optional()])
-                elif attr.field_type == 'number':
-                    field = DecimalField(attr.label, validators=[Optional()])
-                elif attr.field_type == 'date':
-                    field = DateField(attr.label, format='%Y-%m-%d', validators=[Optional()])
-                elif attr.field_type == 'select':
-                    options = attr.get_options_list()
-                    field = SelectField(attr.label, choices=[(o, o) for o in options], validators=[Optional()])
-                else:
-                    field = StringField(attr.label, validators=[Optional()])
-                
-                # 필수 필드인 경우 유효성 검사기 추가
-                if attr.required:
-                    field.validators.append(DataRequired())
-                
-                # 폼에 동적 필드 추가
-                setattr(self, field_name, field)
+            try:
+                for attr in equipment_group.attributes.order_by(EquipmentAttribute.order).all():
+                    field_name = f'custom_{attr.name}'
+                    
+                    # 필드 타입에 따라 다른 폼 필드 생성 - 필수 여부를 초기에 결정
+                    validators = [Optional()] if not attr.required else [DataRequired()]
+                    
+                    if attr.field_type == 'text':
+                        field = StringField(attr.label, validators=validators)
+                    elif attr.field_type == 'number':
+                        field = DecimalField(attr.label, validators=validators)
+                    elif attr.field_type == 'date':
+                        field = DateField(attr.label, format='%Y-%m-%d', validators=validators)
+                    elif attr.field_type == 'select':
+                        options = attr.get_options_list()
+                        field = SelectField(attr.label, choices=[(o, o) for o in options], validators=validators)
+                    else:
+                        field = StringField(attr.label, validators=validators)
+                    
+                    # 폼에 동적 필드 추가
+                    setattr(self, field_name, field)
+            except Exception as e:
+                print(f"장비 그룹 속성 로딩 오류: {str(e)}")
 
 class CompanyForm(FlaskForm):
     company_name = StringField('회사명', validators=[DataRequired(), Length(max=200)])

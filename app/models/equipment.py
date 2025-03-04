@@ -14,8 +14,7 @@ class EquipmentGroup(db.Model):
     
     # 관계 설정
     equipment = db.relationship('Equipment', backref='group', lazy='dynamic')
-    attributes = db.relationship('EquipmentAttribute', backref='group', lazy='dynamic', 
-                                cascade='all, delete-orphan')
+    attributes = db.relationship('app.models.equipment.EquipmentAttribute', backref='group', lazy='dynamic', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<EquipmentGroup {self.id}: {self.name}>'
