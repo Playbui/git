@@ -1,0 +1,196 @@
+{% extends 'layout.html' %}
+
+{% block title %}담당자 정보 수정{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h2 class="card-title">담당자 정보 수정</h2>
+                    <p class="text-muted">{{ contact.name }} - {{ contact.company.company_name }}</p>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('client_contacts.edit', id=contact.id) }}">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label for="company_id" class="form-label">{{ form.company_id.label }}</label>
+                            {{ form.company_id(class="form-select") }}
+                            {% if form.company_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.company_id.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="location_id" class="form-label">{{ form.location_id.label }}</label>
+                            {{ form.location_id(class="form-select") }}
+                            {% if form.location_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.location_id.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">{{ form.name.label }}</label>
+                                    {{ form.name(class="form-control") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="department" class="form-label">{{ form.department.label }}</label>
+                                    {{ form.department(class="form-control") }}
+                                    {% if form.department.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.department.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="position" class="form-label">{{ form.position.label }}</label>
+                            {{ form.position(class="form-control") }}
+                            {% if form.position.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.position.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">{{ form.phone.label }}</label>
+                                    {{ form.phone(class="form-control") }}
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.phone.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">{{ form.email.label }}</label>
+                                    {{ form.email(class="form-control") }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.email.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <div>
+                                <a href="{{ url_for('client_contacts.view', id=contact.id) }}" class="btn btn-secondary">취소</a>
+                                <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                    <i class="fas fa-trash me-1"></i> 담당자 삭제
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">담당자 삭제 확인</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>정말로 <strong>{{ contact.name }}</strong> 담당자를 삭제하시겠습니까?</p>
+                <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form action="{{ url_for('client_contacts.delete', id=contact.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 거래처 선택 시 해당 거래처의 장소 목록 로드
+        document.getElementById('company_id').addEventListener('change', function() {
+            const companyId = this.value;
+            const locationSelect = document.getElementById('location_id');
+            
+            // 장소 목록 초기화
+            while (locationSelect.options.length > 1) {
+                locationSelect.remove(1);
+            }
+            
+            if (companyId > 0) {
+                // AJAX 요청으로 장소 목록 가져오기
+                fetch(`/client-contacts/get-locations/${companyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(location => {
+                            const option = document.createElement('option');
+                            option.value = location.id;
+                            option.textContent = location.name;
+                            locationSelect.appendChild(option);
+                        });
+                        // 기존 선택 값 복원
+                        if ({{ contact.location_id or 0 }} > 0) {
+                            const locationId = {{ contact.location_id or 0 }};
+                            for (let i = 0; i < locationSelect.options.length; i++) {
+                                if (parseInt(locationSelect.options[i].value) === locationId) {
+                                    locationSelect.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error loading locations:', error));
+            }
+        });
+    });
+</script>
+{% endblock %}

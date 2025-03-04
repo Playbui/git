@@ -1,0 +1,241 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ group.name }} - 장비 그룹 상세{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ group.name }} <small class="text-muted">장비 그룹</small></h1>
+            {% if group.description %}
+            <p class="lead">{{ group.description }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('equipment.edit_group', id=group.id) }}" class="btn btn-primary">그룹 수정</a>
+            <a href="{{ url_for('equipment.create_attribute', group_id=group.id) }}" class="btn btn-success">속성 추가</a>
+            <a href="{{ url_for('equipment.group_list') }}" class="btn btn-secondary">목록으로</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">속성 목록</h5>
+                    <span class="badge bg-primary">{{ attributes|length }}개 속성</span>
+                </div>
+                <div class="card-body">
+                    {% if attributes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>순서</th>
+                                    <th>속성명</th>
+                                    <th>표시 이름</th>
+                                    <th>필드 타입</th>
+                                    <th>필수</th>
+                                    <th>옵션</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attr in attributes %}
+                                <tr>
+                                    <td>{{ attr.order }}</td>
+                                    <td>{{ attr.name }}</td>
+                                    <td>{{ attr.label }}</td>
+                                    <td>
+                                        {% if attr.field_type == 'text' %}
+                                            <span class="badge bg-info">문자열</span>
+                                        {% elif attr.field_type == 'number' %}
+                                            <span class="badge bg-primary">숫자</span>
+                                        {% elif attr.field_type == 'date' %}
+                                            <span class="badge bg-success">날짜</span>
+                                        {% elif attr.field_type == 'select' %}
+                                            <span class="badge bg-warning">선택 목록</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ attr.field_type }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attr.required %}
+                                            <i class="fas fa-check text-success"></i>
+                                        {% else %}
+                                            <i class="fas fa-times text-secondary"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attr.field_type == 'select' and attr.options %}
+                                            {% set options = attr.get_options_list() %}
+                                            {% if options|length > 0 %}
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#optionsModal{{ attr.id }}">
+                                                    옵션 ({{ options|length }})
+                                                </button>
+                                                <!-- 옵션 모달 -->
+                                                <div class="modal fade" id="optionsModal{{ attr.id }}" tabindex="-1" aria-labelledby="optionsModalLabel{{ attr.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="optionsModalLabel{{ attr.id }}">{{ attr.label }} 옵션 목록</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <ul class="list-group">
+                                                                    {% for option in options %}
+                                                                    <li class="list-group-item">{{ option }}</li>
+                                                                    {% endfor %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('equipment.edit_attribute', id=attr.id) }}" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAttrModal{{ attr.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- 삭제 확인 모달 -->
+                                        <div class="modal fade" id="deleteAttrModal{{ attr.id }}" tabindex="-1" aria-labelledby="deleteAttrModalLabel{{ attr.id }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteAttrModalLabel{{ attr.id }}">속성 삭제 확인</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>정말로 <strong>{{ attr.label }}</strong> 속성을 삭제하시겠습니까?</p>
+                                                        <div class="alert alert-warning">
+                                                            <strong>주의!</strong> 이 속성에 저장된 모든 장비의 데이터가 함께 삭제됩니다.
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                        <form action="{{ url_for('equipment.delete_attribute', id=attr.id) }}" method="POST" class="d-inline">
+                                                            <button type="submit" class="btn btn-danger">삭제</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <p>이 그룹에 등록된 속성이 없습니다. 장비 그룹 속성을 추가하려면 상단의 '속성 추가' 버튼을 클릭하세요.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">그룹 정보</h5>
+                    {% if group.equipment.count() > 0 %}
+                    <span class="badge bg-success">{{ equipment_count }}개 장비</span>
+                    {% else %}
+                    <span class="badge bg-secondary">0개 장비</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p><strong>그룹 이름:</strong> {{ group.name }}</p>
+                    <p><strong>설명:</strong> {{ group.description or '설명 없음' }}</p>
+                    <p><strong>생성일:</strong> {{ group.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>마지막 수정:</strong> {{ group.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>속성 수:</strong> {{ attributes|length }}개</p>
+                    <p><strong>장비 수:</strong> {{ equipment_count }}개</p>
+                    
+                    {% if equipment_count > 0 %}
+                    <a href="{{ url_for('equipment.list', group_id=group.id) }}" class="btn btn-primary w-100 mt-3">
+                        이 그룹의 장비 보기
+                    </a>
+                    {% endif %}
+
+                    {% if attributes|length > 0 %}
+                    <button type="button" class="btn btn-danger w-100 mt-2" data-bs-toggle="modal" data-bs-target="#deleteGroupModal" {{ 'disabled' if equipment_count > 0 }}>
+                        그룹 삭제
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">속성 추가 방법</h5>
+                </div>
+                <div class="card-body">
+                    <p>장비 그룹에 속성을 추가하여 장비의 특성을 정의할 수 있습니다:</p>
+                    <ol>
+                        <li>'속성 추가' 버튼을 클릭합니다.</li>
+                        <li>속성명(영문): 시스템이 인식할 영문 속성명을 입력합니다. (예: cpu_model)</li>
+                        <li>표시 이름: 화면에 표시될 이름을 입력합니다. (예: CPU 모델)</li>
+                        <li>필드 타입: 문자열, 숫자, 날짜, 선택 목록 중에서 선택합니다.</li>
+                        <li>필수 입력 여부를 선택합니다.</li>
+                        <li>선택 목록의 경우 옵션을 한 줄에 하나씩 입력합니다.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 그룹 삭제 모달 -->
+<div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-labelledby="deleteGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteGroupModalLabel">그룹 삭제 확인</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>정말로 <strong>{{ group.name }}</strong> 그룹을 삭제하시겠습니까?</p>
+                {% if equipment_count > 0 %}
+                <div class="alert alert-danger">
+                    <strong>삭제 불가!</strong> 이 그룹에는 현재 {{ equipment_count }}개의 장비가 등록되어 있습니다.
+                    그룹을 삭제하기 전에 먼저 모든 장비를 삭제하거나 다른 그룹으로 이동해야 합니다.
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <strong>주의!</strong> 이 작업은 되돌릴 수 없으며, 이 그룹에 정의된 모든 속성도 함께 삭제됩니다.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form action="{{ url_for('equipment.delete_group', id=group.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger" {{ 'disabled' if equipment_count > 0 }}>삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

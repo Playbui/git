@@ -87,7 +87,7 @@ def create():
 @login_required
 def view(id):
     location = Location.query.get_or_404(id)
-    return render_template('locations/view.html', location=location)
+    return render_template('locations/detail.html', location=location)
 
 @locations_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -156,3 +156,161 @@ def delete(id):
         flash(f'장소 삭제 중 오류가 발생했습니다. 관련된 데이터가 있을 수 있습니다: {str(e)}', 'danger')
     
     return redirect(url_for('locations.index'))
+
+@locations_bp.route('/<int:location_id>/equipment/create', methods=['GET', 'POST'])
+@login_required
+def create_equipment(location_id):
+    location = Location.query.get_or_404(location_id)
+    form = EquipmentForm()
+    
+    if form.validate_on_submit():
+        try:
+            # 새 장비 생성
+            new_equipment = Equipment(
+                location_id=location.id,
+                equipment_group=form.equipment_group.data,
+                equipment_name=form.equipment_name.data,
+                hostname=form.hostname.data,
+                ip_address=form.ip_address.data,
+                equipment_type=form.equipment_type.data,
+                manufacturer=form.manufacturer.data,
+                model_number=form.model_number.data,
+                os_type=form.os_type.data,
+                os_version=form.os_version.data,
+                serial_number=form.serial_number.data,
+                installation_date=form.installation_date.data,
+                warranty_end_date=form.warranty_end_date.data,
+                maintenance_cycle=form.maintenance_cycle.data,
+                status=form.status.data,
+                notes=form.notes.data
+            )
+            
+            db.session.add(new_equipment)
+            db.session.commit()
+            
+            flash('장비가 성공적으로 등록되었습니다.', 'success')
+            return redirect(url_for('locations.view', id=location.id))
+        except Exception as e:
+            db.session.rollback()
+            print(f"오류 발생: {str(e)}")
+            flash(f'장비 등록 중 오류가 발생했습니다: {str(e)}', 'danger')
+    
+    return render_template('locations/create_equipment.html', form=form, location=location)
+
+@locations_bp.route('/equipment/<int:equipment_id>')
+@login_required
+def equipment_detail(equipment_id):
+    equipment = Equipment.query.get_or_404(equipment_id)
+    return render_template('locations/equipment_detail.html', equipment=equipment)
+
+@locations_bp.route('/equipment/<int:equipment_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_equipment(equipment_id):
+    equipment = Equipment.query.get_or_404(equipment_id)
+    form = EquipmentForm(obj=equipment)
+    
+    if form.validate_on_submit():
+        try:
+            form.populate_obj(equipment)
+            db.session.commit()
+            
+            flash('장비 정보가 성공적으로 업데이트되었습니다.', 'success')
+            return redirect(url_for('locations.equipment_detail', equipment_id=equipment.id))
+        except Exception as e:
+            db.session.rollback()
+            print(f"오류 발생: {str(e)}")
+            flash(f'장비 정보 업데이트 중 오류가 발생했습니다: {str(e)}', 'danger')
+    
+    return render_template('locations/edit_equipment.html', form=form, equipment=equipment)
+import json
+
+@locations_bp.route('/<int:location_id>/equipment/create', methods=['GET', 'POST'])
+@login_required
+def create_equipment(location_id):
+    location = Location.query.get_or_404(location_id)
+    form = EquipmentForm()
+    
+    # 장비 그룹 목록 가져오기
+    equipment_groups = db.session.query(
+        EquipmentAttributeDefinition.equipment_group
+    ).distinct().all()
+    equipment_groups = [group[0] for group in equipment_groups]
+    
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                # 새 장비 생성
+                new_equipment = Equipment(
+                    location_id=location.id,
+                    equipment_group=form.equipment_group.data,
+                    equipment_name=form.equipment_name.data,
+                    hostname=form.hostname.data,
+                    ip_address=form.ip_address.data,
+                    equipment_type=form.equipment_type.data,
+                    manufacturer=form.manufacturer.data,
+                    model_number=form.model_number.data,
+                    os_type=form.os_type.data,
+                    os_version=form.os_version.data,
+                    serial_number=form.serial_number.data,
+                    installation_date=form.installation_date.data,
+                    warranty_end_date=form.warranty_end_date.data,
+                    maintenance_cycle=form.maintenance_cycle.data,
+                    status=form.status.data,
+                    notes=form.notes.data
+                )
+                
+                db.session.add(new_equipment)
+                db.session.flush()  # ID 할당을 위한 flush
+                
+                # 동적 속성 저장
+                for key, value in request.form.items():
+                    if key.startswith('attribute_'):
+                        attr_id = int(key.split('_')[1])
+                        attr_def = EquipmentAttributeDefinition.query.get(attr_id)
+                        
+                        if attr_def and attr_def.equipment_group == form.equipment_group.data:
+                            attr = EquipmentAttribute(
+                                equipment_id=new_equipment.id,
+                                definition_id=attr_id,
+                                attribute_value=value
+                            )
+                            db.session.add(attr)
+                
+                db.session.commit()
+                
+                flash('장비가 성공적으로 등록되었습니다.', 'success')
+                return redirect(url_for('locations.view', id=location.id))
+            except Exception as e:
+                db.session.rollback()
+                print(f"오류 발생: {str(e)}")
+                flash(f'장비 등록 중 오류가 발생했습니다: {str(e)}', 'danger')
+    
+    return render_template(
+        'locations/create_equipment.html', 
+        form=form, 
+        location=location, 
+        equipment_groups=equipment_groups
+    )
+
+@locations_bp.route('/api/equipment-attributes/<equipment_group>')
+@login_required
+def get_equipment_attributes(equipment_group):
+    # 해당 장비 그룹의 속성 정의 목록 가져오기
+    attributes = EquipmentAttributeDefinition.query.filter_by(
+        equipment_group=equipment_group
+    ).order_by(EquipmentAttributeDefinition.display_order).all()
+    
+    attributes_list = []
+    for attr in attributes:
+        attr_data = {
+            'id': attr.id,
+            'name': attr.attribute_name,
+            'label': attr.attribute_label,
+            'type': attr.attribute_type,
+            'required': attr.required,
+            'default_value': attr.default_value,
+            'options': json.loads(attr.options) if attr.options else []
+        }
+        attributes_list.append(attr_data)
+    
+    return jsonify(attributes_list)

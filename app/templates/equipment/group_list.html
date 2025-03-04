@@ -1,0 +1,137 @@
+{% extends 'layout.html' %}
+
+{% block title %}장비 그룹 관리{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>장비 그룹 관리</h1>
+        <a href="{{ url_for('equipment.create_group') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 새 장비 그룹
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">장비 그룹 목록</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>그룹명</th>
+                            <th>설명</th>
+                            <th>속성 수</th>
+                            <th>장비 수</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if groups %}
+                        {% for group in groups %}
+                        <tr>
+                            <td>{{ group.name }}</td>
+                            <td>{{ group.description or '-' }}</td>
+                            <td>{{ group.attributes.count() }}</td>
+                            <td>{{ group.equipment.count() }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('equipment.group_detail', id=group.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('equipment.edit_group', id=group.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ group.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- 삭제 확인 모달 -->
+                                <div class="modal fade" id="deleteModal{{ group.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ group.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ group.id }}">장비 그룹 삭제 확인</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>정말로 <strong>{{ group.name }}</strong> 그룹을 삭제하시겠습니까?</p>
+                                                {% if group.equipment.count() > 0 %}
+                                                <div class="alert alert-danger">
+                                                    <strong>주의!</strong> 이 그룹에는 {{ group.equipment.count() }}개의 장비가 등록되어 있습니다. 
+                                                    모든 장비를 먼저 삭제하거나 다른 그룹으로 이동해야 합니다.
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                <form action="{{ url_for('equipment.delete_group', id=group.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger" {% if group.equipment.count() > 0 %}disabled{% endif %}>삭제</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">등록된 장비 그룹이 없습니다.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">장비 그룹이란?</h5>
+                </div>
+                <div class="card-body">
+                    <p>장비 그룹은 비슷한 특성을 가진 장비들을 분류하는 방법입니다. 각 그룹은 해당 장비 유형에 필요한 고유한 속성을 정의할 수 있습니다.</p>
+                    <ul>
+                        <li><strong>PC/서버</strong> - CPU, RAM, 저장장치 등의 속성을 가질 수 있습니다.</li>
+                        <li><strong>무전기</strong> - 주파수 대역, 출력 등의 속성을 가질 수 있습니다.</li>
+                        <li><strong>환경장비</strong> - 측정 범위, 정확도 등의 속성을 가질 수 있습니다.</li>
+                        <li><strong>네트워크 장비</strong> - 포트 수, 대역폭 등의 속성을 가질 수 있습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">장비 속성이란?</h5>
+                </div>
+                <div class="card-body">
+                    <p>장비 속성은 특정 장비 그룹의 고유한 특성을 나타내는 필드입니다. 속성을 추가하면 해당 그룹의 모든 장비에 대해 이 특성을 입력할 수 있습니다.</p>
+                    <p>속성은 다음과 같은 유형을 가질 수 있습니다:</p>
+                    <ul>
+                        <li><strong>문자열</strong> - 텍스트 입력</li>
+                        <li><strong>숫자</strong> - 숫자 입력</li>
+                        <li><strong>날짜</strong> - 날짜 선택</li>
+                        <li><strong>선택 목록</strong> - 미리 정의된 선택지 목록</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

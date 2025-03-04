@@ -1,0 +1,221 @@
+{% extends 'layout.html' %}
+
+{% block title %}장비 추가 - {{ location.location_name }} {% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="card-title">장비 추가</h2>
+                    <a href="{{ url_for('locations.view', id=location.id) }}" class="btn btn-secondary">장소로 돌아가기</a>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('equipment.create', location_id=location.id) }}">
+                        {{ form.csrf_token }}
+                        
+                        <h4 class="mb-3">장비 그룹 선택</h4>
+                        <div class="mb-3">
+                            <label for="equipment_group_id" class="form-label">{{ form.equipment_group_id.label }}</label>
+                            {{ form.equipment_group_id(class="form-select", id="equipment_group_select") }}
+                            {% if form.equipment_group_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.equipment_group_id.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">먼저 장비 그룹을 선택하면 해당 그룹에 맞는 입력 필드가 표시됩니다.</small>
+                        </div>
+                        
+                        <div id="equipment-details">
+                            <h4 class="mt-4 mb-3">기본 정보</h4>
+                            <div class="mb-3">
+                                <label for="equipment_name" class="form-label">{{ form.equipment_name.label }} <span class="text-danger">*</span></label>
+                                {{ form.equipment_name(class="form-control") }}
+                                {% if form.equipment_name.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.equipment_name.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="manufacturer" class="form-label">{{ form.manufacturer.label }}</label>
+                                        {{ form.manufacturer(class="form-control") }}
+                                        {% if form.manufacturer.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.manufacturer.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="model_number" class="form-label">{{ form.model_number.label }}</label>
+                                        {{ form.model_number(class="form-control") }}
+                                        {% if form.model_number.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.model_number.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="serial_number" class="form-label">{{ form.serial_number.label }}</label>
+                                        {{ form.serial_number(class="form-control") }}
+                                        {% if form.serial_number.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.serial_number.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="status" class="form-label">{{ form.status.label }}</label>
+                                        {{ form.status(class="form-select") }}
+                                        {% if form.status.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.status.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="installation_date" class="form-label">{{ form.installation_date.label }}</label>
+                                        {{ form.installation_date(class="form-control", type="date") }}
+                                        {% if form.installation_date.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.installation_date.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="warranty_end_date" class="form-label">{{ form.warranty_end_date.label }}</label>
+                                        {{ form.warranty_end_date(class="form-control", type="date") }}
+                                        {% if form.warranty_end_date.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.warranty_end_date.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">{{ form.notes.label }}</label>
+                                {{ form.notes(class="form-control", rows="3") }}
+                                {% if form.notes.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.notes.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 동적 커스텀 필드 -->
+                            {% if equipment_group %}
+                            <div id="custom-fields">
+                                <h4 class="mt-4 mb-3">{{ equipment_group.name }} 속성</h4>
+                                {% for attr in equipment_group.attributes %}
+                                <div class="mb-3">
+                                    {% set field_name = 'custom_' ~ attr.name %}
+                                    {% if field_name in form._fields %}
+                                        <label for="{{ field_name }}" class="form-label">
+                                            {{ attr.label }}
+                                            {% if attr.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        
+                                        {% if attr.field_type == 'text' %}
+                                            {{ form[field_name](class="form-control") }}
+                                        {% elif attr.field_type == 'number' %}
+                                            {{ form[field_name](class="form-control", type="number") }}
+                                        {% elif attr.field_type == 'date' %}
+                                            {{ form[field_name](class="form-control", type="date") }}
+                                        {% elif attr.field_type == 'select' %}
+                                            {{ form[field_name](class="form-select") }}
+                                        {% endif %}
+                                        
+                                        {% if form[field_name].errors %}
+                                            <div class="text-danger">
+                                                {% for error in form[field_name].errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('locations.view', id=location.id) }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const groupSelect = document.getElementById('equipment_group_select');
+        
+        // 그룹 변경 시 페이지 리로드
+        groupSelect.addEventListener('change', function() {
+            const selectedGroupId = this.value;
+            if (selectedGroupId > 0) {
+                // 현재 URL에서 group_id 파라미터 추가 또는 변경
+                const url = new URL(window.location.href);
+                url.searchParams.set('group_id', selectedGroupId);
+                window.location.href = url.toString();
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'layout.html' %}
+
+{% block title %}장비 그룹 수정 - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="card-title">장비 그룹 수정</h2>
+                    <a href="{{ url_for('equipment.group_detail', id=group.id) }}" class="btn btn-secondary">그룹 정보로 돌아가기</a>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('equipment.edit_group', id=group.id) }}">
+                        {{ form.csrf_token }}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">{{ form.name.label }} <span class="text-danger">*</span></label>
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description(class="form-control", rows="3") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">이 장비 그룹에 대한 간략한 설명을 입력하세요.</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('equipment.group_detail', id=group.id) }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">장비 그룹 관련 정보</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>그룹 정보 수정 참고사항</h5>
+                        <ul>
+                            <li>그룹 이름을 변경해도 등록된 장비에는 영향이 없습니다.</li>
+                            <li>설명을 추가하거나 수정하여 해당 그룹의 용도를 명확히 하세요.</li>
+                            <li>그룹 속성은 그룹 상세 페이지에서 관리할 수 있습니다.</li>
+                        </ul>
+                    </div>
+                    
+                    {% if group.equipment.count() > 0 %}
+                    <div class="alert alert-warning mt-3">
+                        <h5>주의 사항</h5>
+                        <p>이 그룹에는 현재 {{ group.equipment.count() }}개의 장비가 등록되어 있습니다. 등록된 장비가 있는 그룹은 삭제할 수 없습니다.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

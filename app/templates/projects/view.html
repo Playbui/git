@@ -103,8 +103,8 @@
                         <tr>
                             <th>프로젝트 매니저</th>
                             <td>
-                                {% if project.project_manager %}
-                                {{ project.project_manager.name }} ({{ project.project_manager.phone or '-' }})
+                                {% if project.pm %}
+                                {{ project.pm.name }} ({{ project.pm.phone or '-' }})
                                 {% else %}
                                 -
                                 {% endif %}
@@ -114,52 +114,40 @@
                 </div>
             </div>
 
-            <h5 class="mt-4">프로젝트 설명</h5>
-            <div class="card">
-                <div class="card-body">
-                    {% if project.description %}
-                    <p class="mb-0">{{ project.description|nl2br }}</p>
-                    {% else %}
-                    <p class="text-muted mb-0">프로젝트 설명이 없습니다.</p>
-                    {% endif %}
+        <!-- 수정된 연결된 장소 섹션 -->
+        <h5 class="mt-4">연결된 장소</h5>
+        <div class="card">
+            <div class="card-body">
+                {% if locations and locations|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>장소명</th>
+                                <th>지역</th>
+                                <th>주소</th>
+                                <th>연락처</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for location in locations %}
+                            <tr>
+                                <td>{{ location.location_name }}</td>
+                                <td>{{ location.region }}</td>
+                                <td>{{ location.address }}</td>
+                                <td>{{ location.contact_phone or '-' }}</td>
+                                <td>
+                                    <a href="{{ url_for('locations.view', id=location.id) }}" class="btn btn-sm btn-info">보기</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-
-            <!-- 추가 섹션: 연결된 장소 -->
-            <h5 class="mt-4">연결된 장소</h5>
-            <div class="card">
-                <div class="card-body">
-                    {% if project.locations %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>장소명</th>
-                                    <th>지역</th>
-                                    <th>주소</th>
-                                    <th>연락처</th>
-                                    <th>관리</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for location in project.locations %}
-                                <tr>
-                                    <td>{{ location.location_name }}</td>
-                                    <td>{{ location.region }}</td>
-                                    <td>{{ location.address }}</td>
-                                    <td>{{ location.contact_phone or '-' }}</td>
-                                    <td>
-                                        <a href="#" class="btn btn-sm btn-info">보기</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted mb-0">연결된 장소가 없습니다.</p>
-                    {% endif %}
-                </div>
+                {% else %}
+                <p class="text-muted mb-0">연결된 장소가 없습니다.</p>
+                {% endif %}
             </div>
         </div>
         <div class="card-footer text-muted">

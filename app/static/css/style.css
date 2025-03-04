@@ -1,14 +1,230 @@
 /* 기본 스타일 */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
+    background-color: #f8f9fa;
+    overflow-x: hidden;
 }
 
-.navbar-brand {
+/* 사이드바 스타일 */
+#sidebar-wrapper {
+    width: 250px;
+    min-height: 100vh;
+    transition: margin 0.25s ease-out;
+}
+
+#sidebar-wrapper .sidebar-heading {
     font-weight: bold;
 }
 
+#sidebar-wrapper .list-group-item {
+    border: none;
+    padding: 0.75rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#sidebar-wrapper .list-group-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 페이지 콘텐츠 래퍼 */
+#page-content-wrapper {
+    min-width: 100vw;
+    min-height: 100vh;
+    transition: margin 0.25s ease-out;
+}
+
+/* 사이드바 토글 상태 */
+body.sb-sidenav-toggled #sidebar-wrapper {
+    margin-left: -250px;
+}
+
+@media (min-width: 768px) {
+    #page-content-wrapper {
+        min-width: 0;
+        width: 100%;
+    }
+    
+    body.sb-sidenav-toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+}
+
+/* 카드 스타일 */
 .card {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+}
+
+/* 대시보드 통계 카드 */
+.stat-card {
+    padding: 1.5rem;
+    border-radius: 10px;
+    color: white;
+}
+
+.stat-card-primary {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+}
+
+.stat-card-success {
+    background: linear-gradient(135deg, #1fd1f9 0%, #b621fe 100%);
+}
+
+.stat-card-info {
+    background: linear-gradient(135deg, #f83600 0%, #f9d423 100%);
+}
+
+.stat-card-warning {
+    background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
+}
+
+/* 버튼 스타일 */
+.btn {
+    font-weight: 500;
+    border-radius: 5px;
+}
+
+.btn-primary {
+    background-color: #3f51b5;
+    border-color: #3f51b5;
+}
+
+.btn-primary:hover {
+    background-color: #303f9f;
+    border-color: #303f9f;
+}
+
+/* 테이블 스타일 */
+.table {
+    color: #333;
+}
+
+.table thead th {
+    font-weight: 600;
+    background-color: #f7f7f7;
+    border-top: none;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(63, 81, 181, 0.05);
+}
+
+/* 상태 뱃지 */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+    border-radius: 5px;
+}
+
+/* 목록 페이지 필터 영역 */
+.filter-section {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+/* 로그인 페이지 */
+.login-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.login-card {
+    padding: 30px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 반응형 조정 */
+@media (max-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: -250px;
+    }
+    
+    body.sb-sidenav-toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+}
+
+/* 사이드바 경계에 따른 텍스트 색상 조정 */
+.text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}/* 카드 왼쪽 색상 보더 */
+.border-left-primary {
+    border-left: 4px solid #3f51b5;
+}
+
+.border-left-success {
+    border-left: 4px solid #1cc88a;
+}
+
+.border-left-info {
+    border-left: 4px solid #36b9cc;
+}
+
+.border-left-warning {
+    border-left: 4px solid #f6c23e;
+}
+
+.border-left-danger {
+    border-left: 4px solid #e74a3b;
+}
+
+/* 폰트 크기 클래스 */
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #3a3b45 !important;
+}
+
+/* 마진 제거 */
+.mr-2 {
+    margin-right: 0.5rem !important;
+}
+
+.mr-3 {
+    margin-right: 1rem !important;
+}
+
+/* 여백 없는 ROW */
+.no-gutters {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.no-gutters > .col,
+.no-gutters > [class*=\col-\] {
+    padding-right: 0;
+    padding-left: 0;
+}
+
+/* Font Weight */
+.font-weight-bold {
+    font-weight: 700 !important;
 }

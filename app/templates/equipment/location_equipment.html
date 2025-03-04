@@ -1,0 +1,196 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ location.location_name }} 장비 관리 - GFEM{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ location.location_name }} 장비 관리</h1>
+            <p class="text-muted">{{ location.company.company_name if location.company else '회사 정보 없음' }} | {{ location.region }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ url_for('equipment.create', location_id=location.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 새 장비 추가
+                </a>
+                <a href="{{ url_for('locations.view', id=location.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 장소로 돌아가기
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">장비 필터링</h5>
+        </div>
+        <div class="card-body">
+            <form id="filter-form" class="row g-3">
+                <div class="col-md-4">
+                    <label for="group-filter" class="form-label">장비 그룹</label>
+                    <select id="group-filter" class="form-select">
+                        <option value="">모든 그룹</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="status-filter" class="form-label">상태</label>
+                    <select id="status-filter" class="form-select">
+                        <option value="">모든 상태</option>
+                        <option value="active">활성</option>
+                        <option value="inactive">비활성</option>
+                        <option value="maintenance">유지보수</option>
+                        <option value="broken">고장</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="search-input" class="form-label">검색어</label>
+                    <input type="text" id="search-input" class="form-control" placeholder="장비명, 모델명 등">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">장비 목록</h5>
+                <span id="equipment-count" class="badge bg-primary">{{ equipment_list|length }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if equipment_list %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="equipment-table">
+                    <thead>
+                        <tr>
+                            <th>장비명</th>
+                            <th>그룹</th>
+                            <th>모델</th>
+                            <th>시리얼 번호</th>
+                            <th>설치일</th>
+                            <th>상태</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipment in equipment_list %}
+                        <tr class="equipment-row" 
+                            data-group-id="{{ equipment.equipment_group_id }}"
+                            data-status="{{ equipment.status }}"
+                            data-search-text="{{ equipment.equipment_name }} {{ equipment.manufacturer }} {{ equipment.model_number }} {{ equipment.serial_number }}">
+                            <td>{{ equipment.equipment_name }}</td>
+                            <td>{{ equipment.group.name if equipment.group else '-' }}</td>
+                            <td>{{ equipment.model_number or '-' }}</td>
+                            <td>{{ equipment.serial_number or '-' }}</td>
+                            <td>{{ equipment.installation_date.strftime('%Y-%m-%d') if equipment.installation_date else '-' }}</td>
+                            <td>
+                                {% if equipment.status == 'active' %}
+                                    <span class="badge bg-success">활성</span>
+                                {% elif equipment.status == 'inactive' %}
+                                    <span class="badge bg-secondary">비활성</span>
+                                {% elif equipment.status == 'maintenance' %}
+                                    <span class="badge bg-warning">유지보수</span>
+                                {% elif equipment.status == 'broken' %}
+                                    <span class="badge bg-danger">고장</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('equipment.detail', id=equipment.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('equipment.edit', id=equipment.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ equipment.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- 삭제 모달 -->
+                                <div class="modal fade" id="deleteModal{{ equipment.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">장비 삭제 확인</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>정말로 장비 <strong>{{ equipment.equipment_name }}</strong>을(를) 삭제하시겠습니까?</p>
+                                                <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                <form action="{{ url_for('equipment.delete', id=equipment.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">삭제</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">등록된 장비가 없습니다. 위의 '새 장비 추가' 버튼을 클릭하여 장비를 등록해 주세요.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const groupFilter = document.getElementById('group-filter');
+        const statusFilter = document.getElementById('status-filter');
+        const searchInput = document.getElementById('search-input');
+        const equipmentRows = document.querySelectorAll('.equipment-row');
+        const equipmentCount = document.getElementById('equipment-count');
+        
+        // 필터링 함수
+        function filterEquipment() {
+            const groupId = groupFilter.value;
+            const status = statusFilter.value;
+            const searchText = searchInput.value.toLowerCase();
+            
+            let visibleCount = 0;
+            
+            equipmentRows.forEach(row => {
+                const rowGroupId = row.dataset.groupId;
+                const rowStatus = row.dataset.status;
+                const rowSearchText = row.dataset.searchText.toLowerCase();
+                
+                // 모든 필터 조건 확인
+                const matchesGroup = !groupId || rowGroupId === groupId;
+                const matchesStatus = !status || rowStatus === status;
+                const matchesSearch = !searchText || rowSearchText.includes(searchText);
+                
+                if (matchesGroup && matchesStatus && matchesSearch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // 현재 표시 중인 장비 수 업데이트
+            equipmentCount.textContent = visibleCount;
+        }
+        
+        // 필터 이벤트 리스너 등록
+        groupFilter.addEventListener('change', filterEquipment);
+        statusFilter.addEventListener('change', filterEquipment);
+        searchInput.addEventListener('input', filterEquipment);
+    });
+</script>
+{% endblock %}

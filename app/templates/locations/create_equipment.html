@@ -1,0 +1,231 @@
+{% extends 'layout.html' %}
+
+{% block title %}장비 등록{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">새 장비 등록 - {{ location.location_name }}</h2>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('locations.create_equipment', location_id=location.id) }}">
+                        {{ form.csrf_token }}
+                        
+                        <h4 class="mb-3">기본 정보</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipment_group" class="form-label">{{ form.equipment_group.label }}</label>
+                                    <select id="equipment_group" name="equipment_group" class="form-select" required>
+                                        <option value="">장비 그룹 선택</option>
+                                        {% for group in equipment_groups %}
+                                        <option value="{{ group }}">{{ group }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.equipment_group.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.equipment_group.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipment_name" class="form-label">{{ form.equipment_name.label }}</label>
+                                    {{ form.equipment_name(class="form-control") }}
+                                    {% if form.equipment_name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.equipment_name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="hostname" class="form-label">{{ form.hostname.label }}</label>
+                                    {{ form.hostname(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="ip_address" class="form-label">{{ form.ip_address.label }}</label>
+                                    {{ form.ip_address(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 기본 필드 계속... -->
+                        
+                        <!-- 동적 속성 필드가 여기에 추가됨 -->
+                        <div id="dynamic-attributes" class="mt-4">
+                            <h4 class="mb-3">추가 속성</h4>
+                            <div class="alert alert-info">
+                                장비 그룹을 선택하면 추가 속성이 표시됩니다.
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('locations.view', id=location.id) }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const equipmentGroupSelect = document.getElementById('equipment_group');
+    const dynamicAttributesContainer = document.getElementById('dynamic-attributes');
+    
+    equipmentGroupSelect.addEventListener('change', function() {
+        const selectedGroup = this.value;
+        
+        // 기존 속성 필드 삭제 (첫 번째 헤딩 제외)
+        const attributeFields = dynamicAttributesContainer.querySelectorAll(':scope > *:not(h4):not(.alert)');
+        attributeFields.forEach(field => field.remove());
+        
+        if (selectedGroup) {
+            // 선택된 장비 그룹에 대한 속성 정의 가져오기
+            fetch(`/locations/api/equipment-attributes/${selectedGroup}`)
+                .then(response => response.json())
+                .then(attributes => {
+                    // 정보 알림 제거
+                    const infoAlert = dynamicAttributesContainer.querySelector('.alert-info');
+                    if (infoAlert) {
+                        infoAlert.remove();
+                    }
+                    
+                    if (attributes.length === 0) {
+                        // 속성이 없을 경우 메시지 표시
+                        const noAttributesDiv = document.createElement('div');
+                        noAttributesDiv.className = 'alert alert-warning';
+                        noAttributesDiv.textContent = '이 장비 그룹에 정의된 추가 속성이 없습니다.';
+                        dynamicAttributesContainer.appendChild(noAttributesDiv);
+                        return;
+                    }
+                    
+                    // 속성 필드 추가
+                    attributes.forEach(attr => {
+                        const fieldRow = document.createElement('div');
+                        fieldRow.className = 'row mb-3';
+                        
+                        const fieldCol = document.createElement('div');
+                        fieldCol.className = 'col-md-6';
+                        
+                        const fieldGroup = document.createElement('div');
+                        fieldGroup.className = 'mb-3';
+                        
+                        const label = document.createElement('label');
+                        label.className = 'form-label';
+                        label.htmlFor = `attribute_${attr.id}`;
+                        label.textContent = attr.label;
+                        if (attr.required) {
+                            const requiredSpan = document.createElement('span');
+                            requiredSpan.className = 'text-danger';
+                            requiredSpan.textContent = ' *';
+                            label.appendChild(requiredSpan);
+                        }
+                        
+                        let inputField;
+                        
+                        // 필드 타입에 따라 다른 입력 필드 생성
+                        if (attr.type === 'select') {
+                            inputField = document.createElement('select');
+                            inputField.className = 'form-select';
+                            
+                            // 빈 옵션
+                            const emptyOption = document.createElement('option');
+                            emptyOption.value = '';
+                            emptyOption.textContent = '선택하세요';
+                            inputField.appendChild(emptyOption);
+                            
+                            // 선택 옵션 추가
+                            attr.options.forEach(option => {
+                                const optionElement = document.createElement('option');
+                                optionElement.value = option.value;
+                                optionElement.textContent = option.label;
+                                if (attr.default_value === option.value) {
+                                    optionElement.selected = true;
+                                }
+                                inputField.appendChild(optionElement);
+                            });
+                        } else if (attr.type === 'date') {
+                            inputField = document.createElement('input');
+                            inputField.type = 'date';
+                            inputField.className = 'form-control';
+                            if (attr.default_value) {
+                                inputField.value = attr.default_value;
+                            }
+                        } else if (attr.type === 'number') {
+                            inputField = document.createElement('input');
+                            inputField.type = 'number';
+                            inputField.className = 'form-control';
+                            if (attr.default_value) {
+                                inputField.value = attr.default_value;
+                            }
+                        } else {
+                            // 기본 텍스트 필드
+                            inputField = document.createElement('input');
+                            inputField.type = 'text';
+                            inputField.className = 'form-control';
+                            if (attr.default_value) {
+                                inputField.value = attr.default_value;
+                            }
+                        }
+                        
+                        inputField.id = `attribute_${attr.id}`;
+                        inputField.name = `attribute_${attr.id}`;
+                        if (attr.required) {
+                            inputField.required = true;
+                        }
+                        
+                        fieldGroup.appendChild(label);
+                        fieldGroup.appendChild(inputField);
+                        fieldCol.appendChild(fieldGroup);
+                        fieldRow.appendChild(fieldCol);
+                        dynamicAttributesContainer.appendChild(fieldRow);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching attributes:', error);
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-danger';
+                    errorDiv.textContent = '속성 정보를 불러오는 중 오류가 발생했습니다.';
+                    dynamicAttributesContainer.appendChild(errorDiv);
+                });
+        } else {
+            // 선택된 그룹이 없을 때 안내 메시지 표시
+            const infoAlert = document.createElement('div');
+            infoAlert.className = 'alert alert-info';
+            infoAlert.textContent = '장비 그룹을 선택하면 추가 속성이 표시됩니다.';
+            dynamicAttributesContainer.appendChild(infoAlert);
+        }
+    });
+});
+</script>
+{% endblock %}

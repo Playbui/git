@@ -1,0 +1,52 @@
+{% extends 'layout.html' %}
+
+{% block title %}오류 발생 - 데이터베이스 테이블 누락{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow border-left-danger">
+                <div class="card-body">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle fa-5x text-danger mb-4"></i>
+                        <h1 class="h3 mb-3">데이터베이스 설정이 필요합니다</h1>
+                        <p class="lead mb-4">장비 관리 기능을 사용하기 위해서는 데이터베이스 마이그레이션이 필요합니다.</p>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h4 class="alert-heading">필요한 작업</h4>
+                        <p>장비 관리 시스템에 필요한 데이터베이스 테이블이 아직 생성되지 않았습니다. 시스템 관리자는 다음 단계를 수행해야 합니다:</p>
+                        <ol>
+                            <li>Flask 마이그레이션 초기화 (아직 하지 않은 경우):
+                                <pre class="bg-dark text-white p-2 mt-2">flask db init</pre>
+                            </li>
+                            <li>새 마이그레이션 파일 생성:
+                                <pre class="bg-dark text-white p-2 mt-2">flask db migrate -m "장비 관리 테이블 추가"</pre>
+                            </li>
+                            <li>마이그레이션 적용:
+                                <pre class="bg-dark text-white p-2 mt-2">flask db upgrade</pre>
+                            </li>
+                        </ol>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h4 class="alert-heading">데이터베이스 초기화 안내</h4>
+                        <p>장비 관리에 사용될 데이터베이스 테이블은 다음과 같습니다:</p>
+                        <ul>
+                            <li><code>equipment_groups</code>: 장비 그룹 정의 테이블</li>
+                            <li><code>equipment_attributes</code>: 장비 속성 정의 테이블</li>
+                            <li><code>equipment</code>: 장비 정보 테이블</li>
+                        </ul>
+                        <p>테이블 구조에 대한 자세한 정보는 <code>app/models/equipment.py</code> 파일을 참조하세요.</p>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">대시보드로 돌아가기</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends 'layout.html' %}
+
+{% block title %}장비 목록 - GFEM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">장비 목록</h1>
+        <div>
+            <a href="{{ url_for('equipment.group_list') }}" class="btn btn-primary">
+                <i class="fas fa-object-group me-1"></i> 장비 그룹 관리
+            </a>
+        </div>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    
+    <!-- 검색 필터 -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">장비 검색</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('equipment.list') }}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="group_id" class="form-label">장비 그룹</label>
+                        <select name="group_id" id="group_id" class="form-select">
+                            <option value="0">모든 그룹</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}" {% if selected_group_id == group.id %}selected{% endif %}>
+                                {{ group.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="location_id" class="form-label">장소</label>
+                        <select name="location_id" id="location_id" class="form-select">
+                            <option value="0">모든 장소</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}" {% if selected_location_id == location.id %}selected{% endif %}>
+                                {{ location.location_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">장비명 검색</label>
+                        <div class="input-group">
+                            <input type="text" name="search" id="search" class="form-control" value="{{ search_query }}">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 장비 목록 테이블 -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">장비 목록</h6>
+            <div>
+                {% if locations and locations|length > 0 %}
+                <a href="{{ url_for('equipment.create', location_id=selected_location_id if selected_location_id > 0 else locations[0].id) }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> 장비 추가
+                </a>
+                {% endif %}
+                {% if equipment_list %}
+                <span class="badge bg-secondary ms-2">{{ equipment_list|length }}개 장비</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>이름</th>
+                            <th>그룹</th>
+                            <th>장소</th>
+                            <th>제조사</th>
+                            <th>모델</th>
+                            <th>상태</th>
+                            <th>설치일</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if equipment_list %}
+                        {% for equipment in equipment_list %}
+                        <tr>
+                            <td>{{ equipment.equipment_name }}</td>
+                            <td>{{ equipment.group.name }}</td>
+                            <td>{{ equipment.location.location_name }}</td>
+                            <td>{{ equipment.manufacturer or '-' }}</td>
+                            <td>{{ equipment.model_number or '-' }}</td>
+                            <td>
+                                {% if equipment.status == 'active' %}
+                                <span class="badge bg-success">활성</span>
+                                {% elif equipment.status == 'inactive' %}
+                                <span class="badge bg-secondary">비활성</span>
+                                {% elif equipment.status == 'maintenance' %}
+                                <span class="badge bg-warning">유지보수</span>
+                                {% elif equipment.status == 'broken' %}
+                                <span class="badge bg-danger">고장</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ equipment.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ equipment.installation_date.strftime('%Y-%m-%d') if equipment.installation_date else '-' }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('equipment.detail', id=equipment.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('equipment.edit', id=equipment.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ equipment.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- 삭제 모달 -->
+                                <div class="modal fade" id="deleteModal{{ equipment.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ equipment.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ equipment.id }}">장비 삭제 확인</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>정말로 <strong>{{ equipment.equipment_name }}</strong> 장비를 삭제하시겠습니까?</p>
+                                                <p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                <form action="{{ url_for('equipment.delete', id=equipment.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">삭제</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <div class="p-4">
+                                    <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                                    <p class="lead">등록된 장비가 없습니다.</p>
+                                    {% if selected_group_id != 0 or selected_location_id != 0 or search_query %}
+                                    <p>검색 조건을 변경하거나 <a href="{{ url_for('equipment.list') }}">모든 장비 보기</a>를 클릭하세요.</p>
+                                    {% else %}
+                                    <p>새 장비를 추가하려면 먼저 장소와 장비 그룹을 선택하세요.</p>
+                                    <p>
+                                        <a href="{{ url_for('equipment.group_list') }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus-circle me-1"></i> 장비 그룹 관리
+                                        </a>
+                                        <a href="{{ url_for('locations.index') }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-map-marker-alt me-1"></i> 장소 관리
+                                        </a>
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

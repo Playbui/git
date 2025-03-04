@@ -1,0 +1,156 @@
+{% extends 'layout.html' %}
+
+{% block title %}속성 수정 - {{ attribute.label }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="card-title">{{ attribute.label }} 속성 수정</h2>
+                    <a href="{{ url_for('equipment.group_detail', id=group.id) }}" class="btn btn-secondary">그룹으로 돌아가기</a>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('equipment.edit_attribute', id=attribute.id) }}">
+                        {{ form.csrf_token }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">{{ form.name.label }} <span class="text-danger">*</span></label>
+                                    {{ form.name(class="form-control") }}
+                                    <small class="text-muted">영문, 숫자, 밑줄(_)만 사용하세요. 예: cpu_model, ram_size</small>
+                                    {% if form.name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="label" class="form-label">{{ form.label.label }} <span class="text-danger">*</span></label>
+                                    {{ form.label(class="form-control") }}
+                                    <small class="text-muted">화면에 표시될 이름입니다. 예: CPU 모델, RAM 용량</small>
+                                    {% if form.label.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.label.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="field_type" class="form-label">{{ form.field_type.label }} <span class="text-danger">*</span></label>
+                                    {{ form.field_type(class="form-select") }}
+                                    <small class="text-muted">속성의 데이터 타입을 선택하세요.</small>
+                                    {% if form.field_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.field_type.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="order" class="form-label">{{ form.order.label }}</label>
+                                    {{ form.order(class="form-control", type="number", min="1", step="1") }}
+                                    <small class="text-muted">속성의 표시 순서를 설정합니다. 1부터 시작하는 정수를 입력하세요.</small>
+                                    {% if form.order.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.order.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.required(class="form-check-input") }}
+                                <label for="required" class="form-check-label">{{ form.required.label }}</label>
+                                <small class="d-block text-muted">필수 입력 항목으로 설정하면 장비 추가 시 반드시 값을 입력해야 합니다.</small>
+                                {% if form.required.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.required.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="options-field">
+                            <label for="options" class="form-label">{{ form.options.label }}</label>
+                            {{ form.options(class="form-control", rows="5") }}
+                            <small class="text-muted">선택 옵션 목록을 한 줄에 하나씩 입력하세요. 필드 타입이 '선택 목록'인 경우에만 사용됩니다.</small>
+                            {% if form.options.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.options.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>주의:</strong> 속성 타입이나 이름을 변경하면 이 속성을 사용하는 기존 장비 데이터가 영향을 받을 수 있습니다.
+                        </div>
+                        
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary", value="속성 수정") }}
+                            <a href="{{ url_for('equipment.group_detail', id=group.id) }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fieldTypeSelect = document.getElementById('field_type');
+        const optionsField = document.getElementById('options-field');
+        
+        // 초기 상태 설정
+        updateOptionsVisibility();
+        
+        // 필드 타입 변경 시 옵션 필드 표시/숨김
+        fieldTypeSelect.addEventListener('change', updateOptionsVisibility);
+        
+        function updateOptionsVisibility() {
+            if (fieldTypeSelect.value === 'select') {
+                optionsField.style.display = 'block';
+            } else {
+                optionsField.style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

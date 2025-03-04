@@ -1,0 +1,68 @@
+{% extends 'layout.html' %}
+
+{% block title %}장비 수정 - {{ equipment.equipment_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">장비 정보 수정</h2>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('locations.edit_equipment', equipment_id=equipment.id) }}">
+                        {{ form.csrf_token }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipment_group" class="form-label">{{ form.equipment_group.label }}</label>
+                                    {{ form.equipment_group(class="form-control") }}
+                                    {% if form.equipment_group.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.equipment_group.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipment_name" class="form-label">{{ form.equipment_name.label }}</label>
+                                    {{ form.equipment_name(class="form-control") }}
+                                    {% if form.equipment_name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.equipment_name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 필드 계속... (장비 추가 폼과 동일한 필드) -->
+                        
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('locations.equipment_detail', equipment_id=equipment.id) }}" class="btn btn-secondary">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

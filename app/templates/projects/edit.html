@@ -70,12 +70,10 @@
                                     <label for="client_contact_id" class="form-label">거래처 담당자</label>
                                     <select class="form-select" id="client_contact_id" name="client_contact_id">
                                         <option value="">선택하세요</option>
-                                        {% for user in users %}
-                                        {% if user.user_type == 'client' %}
-                                        <option value="{{ user.id }}" data-company="{{ user.company }}" {% if project.client_contact_id == user.id %}selected{% endif %}>
-                                            {{ user.name }} ({{ user.company }})
+                                        {% for contact in client_contacts %}
+                                        <option value="{{ contact.id }}" data-company-id="{{ contact.company_id }}" {% if project.client_contact_id == contact.id %}selected{% endif %}>
+                                            {{ contact.name }} ({{ contact.company.company_name }})
                                         </option>
-                                        {% endif %}
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -134,32 +132,47 @@
     document.addEventListener('DOMContentLoaded', function() {
         // 거래처 선택 시 해당 거래처의 담당자만 필터링
         document.getElementById('client_company_id').addEventListener('change', function() {
-            const companyName = this.options[this.selectedIndex].text;
+            const companyId = this.value;
             const contactSelect = document.getElementById('client_contact_id');
             
-            // 모든 옵션 숨기기
-            for (let i = 0; i < contactSelect.options.length; i++) {
-                const option = contactSelect.options[i];
-                if (option.value === '') {
+            // 모든 옵션 초기화 (보이게 설정)
+            Array.from(contactSelect.options).forEach(option => {
+                option.style.display = '';
+            });
+            
+            // 선택된 거래처가 있으면 해당 거래처의 담당자만 표시
+            if (companyId !== '') {
+                Array.from(contactSelect.options).forEach(option => {
                     // 첫 번째 '선택하세요' 옵션은 항상 표시
-                    option.style.display = '';
-                } else {
-                    // 선택된 회사에 속한 담당자만 표시
-                    if (this.value === '' || option.textContent.includes(companyName)) {
+                    if (option.value === '') {
                         option.style.display = '';
                     } else {
-                        option.style.display = 'none';
+                        // company-id 데이터 속성으로 필터링 (회사 이름 대신)
+                        const optionCompanyId = option.getAttribute('data-company-id');
+                        if (optionCompanyId === companyId) {
+                            option.style.display = '';
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    }
+                });
+                
+                // 선택된 값이 이제 보이지 않는 옵션이면 리셋
+                if (contactSelect.selectedIndex > 0) {
+                    const selectedOption = contactSelect.options[contactSelect.selectedIndex];
+                    if (selectedOption.style.display === 'none') {
+                        contactSelect.value = '';
                     }
                 }
             }
             
-            // 선택된 값이 이제 보이지 않는 옵션이면 리셋
-            if (contactSelect.selectedIndex > 0) {
-                const selectedOption = contactSelect.options[contactSelect.selectedIndex];
-                if (selectedOption.style.display === 'none') {
-                    contactSelect.value = '';
+            // 콘솔에 현재 클라이언트 목록 표시 (디버깅용)
+            console.log('현재 표시된 담당자 목록:');
+            Array.from(contactSelect.options).forEach(option => {
+                if (option.style.display !== 'none') {
+                    console.log(`- ${option.textContent} (value: ${option.value})`);
                 }
-            }
+            });
         });
         
         // 페이지 로드 시 거래처 필터링 초기 실행

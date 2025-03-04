@@ -8,7 +8,7 @@
         <h1>{{ location.location_name }}</h1>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ url_for('locations.edit', location_id=location.id) }}" class="btn btn-primary">수정</a>
+        <a href="{{ url_for('locations.edit', id=location.id) }}" class="btn btn-primary">수정</a>
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">삭제</button>
         <a href="{{ url_for('locations.index') }}" class="btn btn-secondary">목록으로</a>
     </div>
@@ -23,39 +23,59 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
+                        <p><strong>거래처:</strong> {{ location.company.company_name if location.company else '-' }}</p>
                         <p><strong>지역:</strong> {{ location.region }}</p>
-                        <p><strong>구/군:</strong> {{ location.district or '-' }}</p>
-                        <p><strong>시/도:</strong> {{ location.city or '-' }}</p>
                         <p><strong>근무 구분:</strong> {{ location.work_type or '-' }}</p>
                         <p><strong>안전국명:</strong> {{ location.safety_bureau_name or '-' }}</p>
                         <p><strong>중계소:</strong> {{ location.relay_station or '-' }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>담당자:</strong> {{ location.contact_person or '-' }}</p>
                         <p><strong>사무실 연락처:</strong> {{ location.office_phone or '-' }}</p>
-                        <p><strong>담당자 연락처:</strong> {{ location.contact_phone or '-' }}</p>
-                        <p><strong>우편번호:</strong> {{ location.postal_code or '-' }}</p>
                         <p><strong>주소:</strong> {{ location.address }}</p>
-                        <p><strong>상세 주소:</strong> {{ location.address_detail or '-' }}</p>
+                        <p><strong>특별 지시사항:</strong> {{ location.special_instructions or '-' }}</p>
                     </div>
                 </div>
-                {% if location.access_info or location.special_instructions %}
-                <div class="mt-3">
-                    {% if location.access_info %}
-                    <div class="mb-3">
-                        <h6>접근 정보</h6>
-                        <p>{{ location.access_info }}</p>
+            </div>
+        </div>
+        
+        <!-- 담당자 정보 카드 추가 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">담당자 정보</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>본사 담당자</h6>
+                        {% if location.managers %}
+                            <ul class="list-group">
+                                {% for manager in location.managers %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ manager.name }} ({{ manager.department or '부서없음' }})
+                                    <span class="badge bg-primary rounded-pill">{{ manager.user_type }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">등록된 본사 담당자가 없습니다.</p>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                    
-                    {% if location.special_instructions %}
-                    <div>
-                        <h6>특별 지시사항</h6>
-                        <p>{{ location.special_instructions }}</p>
+                    <div class="col-md-6">
+                        <h6>거래처 담당자</h6>
+                        {% if location.clients %}
+                            <ul class="list-group">
+                                {% for client in location.clients %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ client.name }} ({{ client.company or '회사없음' }})
+                                    <span class="badge bg-secondary rounded-pill">{{ client.phone or '-' }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">등록된 거래처 담당자가 없습니다.</p>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -79,10 +99,10 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">장비 목록</h5>
-                <a href="{{ url_for('locations.create_equipment', location_id=location.id) }}" class="btn btn-sm btn-primary">장비 추가</a>
+                <a href="{{ url_for('equipment.create', location_id=location.id) }}" class="btn btn-sm btn-primary">장비 추가</a>
             </div>
             <div class="card-body">
-                {% if location.equipment %}
+                {% if location.equipment and location.equipment.count() > 0 %}
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
@@ -100,10 +120,10 @@
                             {% for equipment in location.equipment %}
                             <tr>
                                 <td>{{ equipment.equipment_name }}</td>
-                                <td>{{ equipment.equipment_group }}</td>
-                                <td>{{ equipment.equipment_type or '-' }}</td>
-                                <td>{{ equipment.hostname or '-' }}</td>
-                                <td>{{ equipment.ip_address or '-' }}</td>
+                                <td>{{ equipment.group.name if equipment.group else '-' }}</td>
+                                <td>{{ equipment.get_attribute_value('type') or '-' }}</td>
+                                <td>{{ equipment.get_attribute_value('hostname') or '-' }}</td>
+                                <td>{{ equipment.get_attribute_value('ip_address') or '-' }}</td>
                                 <td>
                                     {% if equipment.status == 'active' %}
                                         <span class="badge bg-success">활성</span>
@@ -116,8 +136,8 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('locations.equipment_detail', equipment_id=equipment.id) }}" class="btn btn-sm btn-outline-info">상세</a>
-                                    <a href="{{ url_for('locations.edit_equipment', equipment_id=equipment.id) }}" class="btn btn-sm btn-outline-primary">수정</a>
+                                    <a href="{{ url_for('equipment.detail', id=equipment.id) }}" class="btn btn-sm btn-outline-info">상세</a>
+                                    <a href="{{ url_for('equipment.edit', id=equipment.id) }}" class="btn btn-sm btn-outline-primary">수정</a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -143,14 +163,14 @@
             <div class="modal-body">
                 <p>정말로 이 장소를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
                 <p class="text-danger"><strong>{{ location.location_name }}</strong></p>
-                {% if location.equipment %}
+                {% if location.equipment and location.equipment.count() > 0 %}
                 <div class="alert alert-warning">
-                    <p><strong>주의!</strong> 이 장소에 등록된 장비가 {{ location.equipment|length }}개 있습니다. 삭제하면 등록된 모든 장비도 함께 삭제됩니다.</p>
+                    <p><strong>주의!</strong> 이 장소에 등록된 장비가 {{ location.equipment.count() }}개 있습니다. 삭제하면 등록된 모든 장비도 함께 삭제됩니다.</p>
                 </div>
                 {% endif %}
             </div>
             <div class="modal-footer">
-                <form action="{{ url_for('locations.delete', location_id=location.id) }}" method="POST">
+                <form action="{{ url_for('locations.delete', id=location.id) }}" method="POST">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
                     <button type="submit" class="btn btn-danger">삭제</button>
                 </form>

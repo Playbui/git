@@ -38,6 +38,9 @@ def create_app(config_class=Config):
     from app.routes.client_contacts import client_contacts_bp
     app.register_blueprint(client_contacts_bp)
     
+    from app.routes.equipment import equipment_bp
+    app.register_blueprint(equipment_bp)
+    
     @app.route('/')
     def index():
         return render_template('index.html')

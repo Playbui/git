@@ -91,8 +91,8 @@ class ProjectForm(FlaskForm):
     start_date = DateField('시작일', format='%Y-%m-%d', validators=[DataRequired()])
     end_date = DateField('종료일', format='%Y-%m-%d', validators=[DataRequired()])
     budget = DecimalField('예산', places=2, validators=[Optional()])
-    client_name = StringField('발주처명', validators=[DataRequired(), Length(max=100)])
-    client_contact_id = SelectField('발주처 담당자', coerce=int, validators=[Optional()])
+    client_company_id = SelectField('거래처', coerce=int, validators=[Optional()])
+    client_contact_id = SelectField('거래처 담당자', coerce=int, validators=[Optional()])
     department_in_charge = StringField('담당 부서', validators=[Length(max=100)])
     pm_id = SelectField('담당 PM', coerce=int, validators=[Optional()])
     status = SelectField('상태', choices=[
@@ -106,6 +106,9 @@ class ProjectForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
+        self.client_company_id.choices = [(0, '선택하세요')] + [
+            (c.id, c.company_name) for c in Company.query.order_by(Company.company_name).all()
+        ]
         self.client_contact_id.choices = [(0, '선택하세요')] + [
             (u.id, f"{u.name} ({u.company})") 
             for u in User.query.filter_by(user_type='client').all()
@@ -154,20 +157,36 @@ class LocationForm(FlaskForm):
             for u in User.query.filter_by(user_type='client').all()
         ]
 
+class EquipmentGroupForm(FlaskForm):
+    """장비 그룹 관리 폼"""
+    name = StringField('그룹명', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('설명')
+    submit = SubmitField('그룹 저장')
+
+class EquipmentAttributeForm(FlaskForm):
+    """장비 그룹 속성 관리 폼"""
+    name = StringField('속성명(영문)', validators=[DataRequired(), Length(max=100)])
+    label = StringField('표시 이름', validators=[DataRequired(), Length(max=100)])
+    field_type = SelectField('필드 타입', choices=[
+        ('text', '문자열'),
+        ('number', '숫자'),
+        ('date', '날짜'),
+        ('select', '선택 목록')
+    ], validators=[DataRequired()])
+    required = BooleanField('필수 입력')
+    options = TextAreaField('선택 옵션 (한 줄에 하나씩 입력)')
+    order = StringField('표시 순서', validators=[Optional()])
+    submit = SubmitField('속성 저장')
+
 class EquipmentForm(FlaskForm):
-    equipment_group = StringField('장비 그룹', validators=[DataRequired(), Length(max=100)])
+    """장비 정보 관리 폼"""
+    equipment_group_id = SelectField('장비 그룹', coerce=int, validators=[DataRequired()])
     equipment_name = StringField('장비명', validators=[DataRequired(), Length(max=255)])
-    hostname = StringField('호스트명', validators=[Length(max=100)])
-    ip_address = StringField('IP 주소', validators=[Length(max=15)])
-    equipment_type = StringField('장비 종류', validators=[Length(max=100)])
     manufacturer = StringField('제조사', validators=[Length(max=100)])
     model_number = StringField('모델번호', validators=[Length(max=100)])
-    os_type = StringField('OS 종류', validators=[Length(max=100)])
-    os_version = StringField('OS 버전', validators=[Length(max=50)])
     serial_number = StringField('시리얼 번호', validators=[Length(max=100)])
     installation_date = DateField('설치일', format='%Y-%m-%d', validators=[Optional()])
     warranty_end_date = DateField('보증 만료일', format='%Y-%m-%d', validators=[Optional()])
-    maintenance_cycle = StringField('유지보수 주기', validators=[Length(max=50)])
     status = SelectField('상태', choices=[
         ('active', '활성'),
         ('inactive', '비활성'),
@@ -175,7 +194,44 @@ class EquipmentForm(FlaskForm):
         ('broken', '고장')
     ])
     notes = TextAreaField('비고')
+    
+    # 동적으로 추가될 커스텀 필드들은 __init__ 메서드에서 초기화됨
+    
     submit = SubmitField('장비 저장')
+    
+    def __init__(self, *args, equipment_group=None, **kwargs):
+        super(EquipmentForm, self).__init__(*args, **kwargs)
+        from app.models.equipment import EquipmentGroup, EquipmentAttribute
+        
+        # 장비 그룹 선택 옵션 초기화
+        self.equipment_group_id.choices = [(0, '선택하세요')] + [
+            (g.id, g.name) for g in EquipmentGroup.query.order_by(EquipmentGroup.name).all()
+        ]
+        
+        # 특정 그룹이 선택된 경우, 해당 그룹의 커스텀 필드 생성
+        if equipment_group:
+            for attr in equipment_group.attributes.order_by(EquipmentAttribute.order).all():
+                field_name = f'custom_{attr.name}'
+                
+                # 필드 타입에 따라 다른 폼 필드 생성
+                if attr.field_type == 'text':
+                    field = StringField(attr.label, validators=[Optional()])
+                elif attr.field_type == 'number':
+                    field = DecimalField(attr.label, validators=[Optional()])
+                elif attr.field_type == 'date':
+                    field = DateField(attr.label, format='%Y-%m-%d', validators=[Optional()])
+                elif attr.field_type == 'select':
+                    options = attr.get_options_list()
+                    field = SelectField(attr.label, choices=[(o, o) for o in options], validators=[Optional()])
+                else:
+                    field = StringField(attr.label, validators=[Optional()])
+                
+                # 필수 필드인 경우 유효성 검사기 추가
+                if attr.required:
+                    field.validators.append(DataRequired())
+                
+                # 폼에 동적 필드 추가
+                setattr(self, field_name, field)
 
 class CompanyForm(FlaskForm):
     company_name = StringField('회사명', validators=[DataRequired(), Length(max=200)])
@@ -236,3 +292,8 @@ class ClientContactForm(FlaskForm):
         ]
         # 장소 목록은 거래처 선택 시 동적으로 변경됨
         self.location_id.choices = [(0, '선택하세요')]
+        
+    def validate_location_id(self, field):
+        # 값이 0이면 None으로 처리하여 오류 방지
+        if field.data == 0:
+            field.data = None
