@@ -46,3 +46,4 @@ def create_app(config_class=Config):
         return render_template('index.html')
     
     return app
+    app = create_app()
