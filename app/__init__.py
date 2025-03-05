@@ -1,9 +1,7 @@
-# app/__init__.py
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from app.config import Config
-
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -16,7 +14,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
     
-    # 블루프린트 등록 - 각 블루프린트는 한 번만 등록
+    # 블루프린트 등록
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
     
@@ -46,3 +44,6 @@ def create_app(config_class=Config):
         return render_template('index.html')
     
     return app
+
+# Vercel이 `app` 변수를 찾을 수 있도록 정의
+app = create_app()
